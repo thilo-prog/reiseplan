@@ -1,0 +1,1414 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover"/>
+  <meta name="apple-mobile-web-app-capable" content="yes"/>
+  <meta name="apple-mobile-web-app-status-bar-style" content="default"/>
+  <meta name="apple-mobile-web-app-title" content="Reiseplan"/>
+  <meta name="theme-color" content="#FAFAF8"/>
+  <link rel="manifest" href="manifest.json"/>
+  <link rel="apple-touch-icon" href="icon-192.png"/>
+  <title>Familien-Reiseplan 2026</title>
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,500;0,9..144,700;1,9..144,300&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet"/>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+  <style>
+    :root {
+      --bg:       #FAFAF8;
+      --bg2:      #F3F2EE;
+      --bg3:      #ECEAE4;
+      --card:     #FFFFFF;
+      --text:     #1A1A18;
+      --text2:    #5C5A52;
+      --text3:    #9B998E;
+      --border:   rgba(0,0,0,0.07);
+      --shadow:   0 2px 16px rgba(0,0,0,0.07);
+      --shadow-lg:0 8px 40px rgba(0,0,0,0.12);
+      --radius:   18px;
+
+      /* Pastell station colors */
+      --algarve:    #E8845A;
+      --sevilla:    #D4A843;
+      --teneriffa:  #4A9B7F;
+      --kreuzfahrt: #5B87C5;
+      --offen:      #9B7FB5;
+
+      /* Pastell tints */
+      --algarve-tint:    #FDF0EA;
+      --sevilla-tint:    #FDF6E3;
+      --teneriffa-tint:  #E8F5F0;
+      --kreuzfahrt-tint: #EAF0FB;
+      --offen-tint:      #F3EEF9;
+
+      --safe-top: env(safe-area-inset-top, 44px);
+      --safe-bot: env(safe-area-inset-bottom, 20px);
+    }
+
+    * { box-sizing:border-box; margin:0; padding:0; -webkit-tap-highlight-color:transparent; }
+    html,body { height:100%; overflow:hidden; background:var(--bg); }
+    body { font-family:'DM Sans', system-ui, sans-serif; color:var(--text); }
+
+    #app {
+      height:100%; display:flex; flex-direction:column;
+      max-width:430px; margin:0 auto; position:relative; overflow:hidden;
+    }
+
+    .view {
+      flex:1; overflow-y:auto; overflow-x:hidden;
+      -webkit-overflow-scrolling:touch; background:var(--bg);
+    }
+    .view::-webkit-scrollbar { display:none; }
+
+    /* ── Typography ── */
+    .display { font-family:'Fraunces', serif; font-weight:700; letter-spacing:-0.03em; }
+    .serif    { font-family:'Fraunces', serif; font-weight:300; }
+
+    /* ── Animations ── */
+    @keyframes fadeUp   { from{opacity:0;transform:translateY(12px)} to{opacity:1;transform:translateY(0)} }
+    @keyframes slideIn  { from{transform:translateX(100%)} to{transform:translateX(0)} }
+    @keyframes slideUp  { from{transform:translateY(100%);opacity:0} to{transform:translateY(0);opacity:1} }
+    @keyframes spin     { to{transform:rotate(360deg)} }
+    @keyframes pop      { 0%{transform:scale(1)} 40%{transform:scale(1.25)} 100%{transform:scale(1)} }
+    @keyframes shimmer  { from{background-position:-200% 0} to{background-position:200% 0} }
+    @keyframes menuIn   { from{transform:translateX(-100%)} to{transform:translateX(0)} }
+
+    .fade-up  { animation:fadeUp  0.4s cubic-bezier(0.16,1,0.3,1) both; }
+    .slide-in { animation:slideIn 0.35s cubic-bezier(0.16,1,0.3,1) both; }
+    .slide-up { animation:slideUp 0.4s cubic-bezier(0.16,1,0.3,1) both; }
+    .spin     { animation:spin 0.7s linear infinite; display:inline-block; vertical-align:middle; }
+    .pop      { animation:pop 0.35s ease; }
+
+    /* ── Cards ── */
+    .card {
+      background:var(--card); border-radius:var(--radius);
+      border:1px solid var(--border); box-shadow:var(--shadow);
+    }
+
+    /* ── Buttons ── */
+    button { font-family:'DM Sans',system-ui,sans-serif; cursor:pointer; }
+    button:active { opacity:0.72; transform:scale(0.97); transition:all 0.1s; }
+
+    input,textarea,select {
+      font-family:'DM Sans',system-ui,sans-serif;
+      background:var(--bg2); color:var(--text);
+      border:1.5px solid var(--border); border-radius:12px;
+      padding:13px 15px; font-size:15px; width:100%; outline:none;
+      transition:border-color 0.2s, box-shadow 0.2s;
+      -webkit-appearance:none;
+    }
+    input:focus,textarea:focus {
+      border-color:var(--accent,#4A9B7F);
+      box-shadow:0 0 0 3px var(--accent-tint,rgba(74,155,127,0.12));
+    }
+    textarea { resize:none; }
+
+    /* ── Bottom Nav ── */
+    .bottom-nav {
+      display:flex; background:rgba(250,250,248,0.92);
+      backdrop-filter:blur(20px); -webkit-backdrop-filter:blur(20px);
+      border-top:1px solid var(--border);
+      padding-bottom:var(--safe-bot);
+      flex-shrink:0; position:relative; z-index:50;
+    }
+    .nav-btn {
+      flex:1; display:flex; flex-direction:column; align-items:center;
+      padding:10px 4px 8px; background:none; border:none;
+      color:var(--text3); font-size:10px; font-weight:600;
+      gap:5px; letter-spacing:0.2px; transition:color 0.2s;
+    }
+    .nav-btn.active { color:var(--accent,#4A9B7F); }
+
+    /* ── Top bar ── */
+    .topbar {
+      padding:16px 20px 14px;
+      padding-top:calc(var(--safe-top) + 8px);
+      background:rgba(250,250,248,0.92);
+      backdrop-filter:blur(20px); -webkit-backdrop-filter:blur(20px);
+      border-bottom:1px solid var(--border);
+      position:sticky; top:0; z-index:40; flex-shrink:0;
+    }
+
+    .back-btn {
+      display:inline-flex; align-items:center; gap:6px;
+      background:var(--bg2); border:1px solid var(--border);
+      border-radius:20px; padding:7px 14px 7px 10px;
+      font-size:13px; font-weight:600; color:var(--text2);
+      margin-bottom:12px;
+    }
+
+    /* ── Chips ── */
+    .chip {
+      display:inline-flex; align-items:center; gap:5px;
+      padding:7px 14px; border-radius:20px; font-size:13px;
+      font-weight:600; white-space:nowrap;
+      border:1.5px solid var(--border);
+      background:var(--card); color:var(--text2);
+      transition:all 0.15s; cursor:pointer;
+    }
+    .chip.active {
+      background:var(--chip-color,#4A9B7F);
+      border-color:var(--chip-color,#4A9B7F);
+      color:white;
+    }
+
+    /* ── Badge ── */
+    .badge {
+      display:inline-flex; align-items:center;
+      font-size:11px; font-weight:700; padding:3px 8px;
+      border-radius:20px; white-space:nowrap;
+    }
+
+    /* ── Section label ── */
+    .sec-lbl {
+      font-family:'Fraunces',serif; font-size:13px; font-weight:500;
+      color:var(--text3); margin:20px 0 10px; letter-spacing:0.02em;
+    }
+
+    /* ── Progress ── */
+    .prog { height:5px; border-radius:3px; background:var(--bg3); overflow:hidden; }
+    .prog-fill { height:100%; border-radius:3px; transition:width 0.6s cubic-bezier(0.16,1,0.3,1); }
+
+    /* ── Toast ── */
+    #toast {
+      position:fixed; bottom:calc(var(--safe-bot) + 80px); left:50%;
+      transform:translateX(-50%) translateY(8px);
+      background:var(--text); color:white;
+      padding:10px 20px; border-radius:20px;
+      font-size:13px; font-weight:600;
+      opacity:0; transition:all 0.3s; pointer-events:none; z-index:999;
+      white-space:nowrap; box-shadow:var(--shadow-lg);
+    }
+    #toast.show { opacity:1; transform:translateX(-50%) translateY(0); }
+
+    /* ── Burger Menu Overlay ── */
+    #menu-overlay {
+      position:fixed; inset:0; z-index:200; display:none;
+    }
+    #menu-overlay.open { display:block; }
+    #menu-backdrop {
+      position:absolute; inset:0;
+      background:rgba(0,0,0,0.25);
+      backdrop-filter:blur(4px);
+    }
+    #menu-panel {
+      position:absolute; left:0; top:0; bottom:0; width:80%; max-width:300px;
+      background:var(--card); box-shadow:var(--shadow-lg);
+      display:flex; flex-direction:column;
+      animation:menuIn 0.3s cubic-bezier(0.16,1,0.3,1) both;
+      overflow-y:auto;
+    }
+
+    /* ── Day summary prompt ── */
+    .summary-prompt {
+      background:linear-gradient(135deg,#FFF9E6,#FFF3D4);
+      border:1.5px solid #F0D080;
+      border-radius:var(--radius); padding:16px;
+      display:flex; align-items:center; gap:12px; cursor:pointer;
+    }
+
+    /* ── Hotel card ── */
+    .hotel-confirmed {
+      background:linear-gradient(135deg,var(--tint,#E8F5F0),white);
+      border:1.5px solid var(--color,#4A9B7F);
+    }
+
+    /* ── Leaflet ── */
+    .leaflet-container { background:var(--bg2); border-radius:12px; }
+    .leaflet-tile { filter:saturate(0.7) brightness(1.05); }
+
+    /* ── Shimmer loading ── */
+    .shimmer {
+      background:linear-gradient(90deg,var(--bg2) 25%,var(--bg3) 50%,var(--bg2) 75%);
+      background-size:200% 100%;
+      animation:shimmer 1.5s infinite;
+      border-radius:8px;
+    }
+  </style>
+</head>
+<body>
+<div id="app">
+  <div id="view-container" class="view"></div>
+  <nav class="bottom-nav" id="bottom-nav" style="display:none"></nav>
+</div>
+<div id="toast"></div>
+<div id="menu-overlay">
+  <div id="menu-backdrop" onclick="closeMenu()"></div>
+  <div id="menu-panel" id="menu-panel"></div>
+</div>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-app.js";
+import { getFirestore, doc, setDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-firestore.js";
+
+// ── Firebase ──────────────────────────────────────────────
+const fb = initializeApp({
+  apiKey:"AIzaSyBEoOzvFXI-m-ogVmXIMnO7VX7Ux0yMPzU",
+  authDomain:"reiseplan-2026.firebaseapp.com",
+  projectId:"reiseplan-2026",
+  storageBucket:"reiseplan-2026.firebasestorage.app",
+  messagingSenderId:"1029759402525",
+  appId:"1:1029759402525:web:9203ab7c29882c5fe8fcf4"
+});
+const db = getFirestore(fb);
+const DBDOC = "shared_v2";
+
+// ── Data ──────────────────────────────────────────────────
+const STATIONS = [
+  {
+    id:"algarve", name:"Algarve", subtitle:"Robinson Club Quinta da Ria", emoji:"🏖️",
+    dates:"8.–14. März", dateRange:["2026-03-08","2026-03-09","2026-03-10","2026-03-11","2026-03-12","2026-03-13"],
+    color:"#E8845A", tint:"#FDF0EA", lat:37.09, lng:-8.25,
+    hotel:{ confirmed:true, name:"Robinson Club Quinta da Ria", address:"Quinta da Ria, Tavira, Algarve", checkin:"2026-03-08", checkout:"2026-03-14", lat:37.13, lng:-7.64 }
+  },
+  {
+    id:"sevilla", name:"Sevilla", subtitle:"Stadttrip – 2 Nächte", emoji:"🌸",
+    dates:"14.–16. März", dateRange:["2026-03-14","2026-03-15"],
+    color:"#D4A843", tint:"#FDF6E3", lat:37.38, lng:-5.97,
+    hotel:{ confirmed:false, name:"", address:"", checkin:"2026-03-14", checkout:"2026-03-16", suggestions:["Hotel Alfonso XIII","EME Catedral Hotel","Hotel Colón","Casa 1800 Sevilla"] }
+  },
+  {
+    id:"teneriffa", name:"Teneriffa", subtitle:"Unterkunft offen – 4 Nächte", emoji:"🌋",
+    dates:"16.–20. März", dateRange:["2026-03-16","2026-03-17","2026-03-18","2026-03-19"],
+    color:"#4A9B7F", tint:"#E8F5F0", lat:28.29, lng:-16.62,
+    hotel:{ confirmed:false, name:"", address:"", checkin:"2026-03-16", checkout:"2026-03-20", suggestions:["Gran Hotel Bahía del Duque","Hotel Jardines de Nivaria","Palacio de Isora","Ritz-Carlton Abama"] }
+  },
+  {
+    id:"kreuzfahrt", name:"Kreuzfahrt", subtitle:"Kanarische Inseln – 7 Nächte", emoji:"🚢",
+    dates:"20.–27. März", dateRange:["2026-03-20","2026-03-21","2026-03-22","2026-03-23","2026-03-24","2026-03-25","2026-03-26"],
+    color:"#5B87C5", tint:"#EAF0FB", lat:28.10, lng:-15.41,
+    hotel:{ confirmed:true, name:"Auf dem Schiff", address:"MSC Kreuzfahrt – Kanarische Inseln", isCruise:true },
+    cruisePorts:[
+      {date:"2026-03-20",port:"Las Palmas, Gran Canaria",emoji:"🏖️",lat:28.10,lng:-15.41},
+      {date:"2026-03-21",port:"Santa Cruz de Tenerife",emoji:"🌋",lat:28.47,lng:-16.25},
+      {date:"2026-03-22",port:"San Sebastián, La Gomera",emoji:"🌿",lat:28.09,lng:-17.11},
+      {date:"2026-03-23",port:"Santa Cruz de La Palma",emoji:"🌺",lat:28.68,lng:-17.76},
+      {date:"2026-03-24",port:"Seetag",emoji:"🌊",lat:28.5,lng:-16.0,seaDay:true},
+      {date:"2026-03-25",port:"Arrecife, Lanzarote",emoji:"🌵",lat:28.96,lng:-13.55},
+      {date:"2026-03-26",port:"Morro Jable, Fuerteventura",emoji:"🏝️",lat:28.05,lng:-14.35},
+    ]
+  },
+  {
+    id:"offen", name:"Portugal", subtitle:"Rundreise – noch offen", emoji:"✈️",
+    dates:"27. März – 10. April", dateRange:["2026-03-27","2026-03-28","2026-03-29","2026-03-30","2026-03-31","2026-04-01","2026-04-02","2026-04-03","2026-04-04","2026-04-05","2026-04-06","2026-04-07","2026-04-08","2026-04-09"],
+    color:"#9B7FB5", tint:"#F3EEF9", lat:38.72, lng:-9.14,
+    hotel:{ confirmed:false, name:"", address:"", checkin:"2026-03-27", checkout:"2026-04-10", suggestions:["Bairro Alto Hotel Lissabon","Sublime Comporta","Pousada Palácio de Estoi","Montefiori Comporta"] }
+  },
+];
+
+const CATS = {
+  strand:      {label:"Strand",      emoji:"🏖️", color:"#E8845A", tint:"#FDF0EA"},
+  natur:       {label:"Natur",       emoji:"🌿", color:"#4A9B7F", tint:"#E8F5F0"},
+  kultur:      {label:"Kultur",      emoji:"🏛️", color:"#D4A843", tint:"#FDF6E3"},
+  essen:       {label:"Essen",       emoji:"🍽️", color:"#E87A5A", tint:"#FDF0EA"},
+  entspannung: {label:"Entspannung", emoji:"😌", color:"#9B7FB5", tint:"#F3EEF9"},
+};
+
+const PRESET = {
+  algarve:[
+    {id:"a1",title:"Praia da Marinha",description:"Einer der schönsten Strände der Algarve mit beeindruckenden Felsformationen und klarem Wasser.",duration:"2–3 Std.",babyTip:"Früh morgens – kühler und weniger Sonne. SPF 50+ und Sonnenhut.",directions:"20 Min. mit dem Auto, westlich von Tavira.",category:"strand",lat:37.09,lng:-8.41,budget:0},
+    {id:"a2",title:"Bootsfahrt zu den Grotten",description:"Spektakuläre Meereshöhlen und Felsbögen. Türkisblaues Wasser.",duration:"1,5 Std.",babyTip:"Morgentouren ruhiger. Cara in Tragehilfe sichern.",directions:"Ab Benagil Beach oder Carvoeiro.",category:"natur",lat:37.09,lng:-8.44,budget:25},
+    {id:"a3",title:"Altstadtbummel Tavira",description:"Charmante historische Stadt mit Brücke über den Rio Gilão, weißen Häusern und kleinen Tapasbars.",duration:"2 Std.",babyTip:"Flache Wege, Kinderwagen gut möglich. Viele schattige Plätze.",directions:"Direkt von der Unterkunft.",category:"kultur",lat:37.13,lng:-7.65,budget:0},
+    {id:"a4",title:"Frühstück am Strand",description:"Portugiesisches Frühstück mit Pastel de Nata, frischem Saft und Kaffee mit Meerblick.",duration:"1 Std.",babyTip:"Vor 9 Uhr – kaum Sonne. Brei für Cara mitnehmen.",directions:"Strandrestaurants direkt am Robinson Club.",category:"essen",lat:37.10,lng:-8.46,budget:15},
+    {id:"a5",title:"Sundowner in Tavira",description:"Uferpromenade entlang des Flusses mit schöner Abendsonne und lokalen Restaurants.",duration:"2 Std.",babyTip:"Abends kühler – leichte Jacke. Flache Promenade, Kinderwagen ideal.",directions:"Tavira Zentrum, 5 Min. vom Hotel.",category:"entspannung",lat:37.12,lng:-7.65,budget:25},
+    {id:"a6",title:"Naturpark Ria Formosa",description:"Einzigartiges Lagunen-Ökosystem mit Flamingos, Seepferdchen und weißen Sandinseln.",duration:"Halber Tag",babyTip:"Bootsfahrt durch die Lagune – sehr ruhig. Natur pur für Cara.",directions:"Ab Tavira, Bootstouren ab dem Hafen.",category:"natur",lat:37.03,lng:-7.75,budget:20},
+  ],
+  sevilla:[
+    {id:"s1",title:"Reales Alcázar",description:"Mudéjare Architektur der Extraklasse. Weitläufige Gärten, sehr familienfreundlich.",duration:"2–3 Std.",babyTip:"Gärten mit Kinderwagen befahrbar. Vor 10 Uhr – weniger Andrang.",directions:"Plaza del Triunfo, Zentrum.",category:"kultur",lat:37.38,lng:-5.99,budget:12},
+    {id:"s2",title:"Guadalquivir Bootsfahrt",description:"Entspannte Flussfahrt mit Blick auf die Stadtsilhouette.",duration:"1 Std.",babyTip:"Ruhige Fahrt. Abendfahrten bei angenehmer Kühle.",directions:"Torre del Oro.",category:"natur",lat:37.38,lng:-5.99,budget:18},
+    {id:"s3",title:"Tapas im Barrio Santa Cruz",description:"Historisches jüdisches Viertel mit wunderbaren Tapas-Bars.",duration:"2 Std.",babyTip:"Enge Gassen – Tragehilfe statt Kinderwagen. Viele Außentische.",directions:"Neben dem Alcázar.",category:"essen",lat:37.38,lng:-5.99,budget:35},
+    {id:"s4",title:"Parque de María Luisa",description:"Sevillas grüne Lunge mit Springbrunnen und Enten.",duration:"1–2 Std.",babyTip:"Viel Schatten, flache Wege. Enten begeistern Babys.",directions:"Avenida de María Luisa.",category:"entspannung",lat:37.37,lng:-5.99,budget:0},
+    {id:"s5",title:"Metropol Parasol",description:"Weltgrößte Holzstruktur mit Panoramablick.",duration:"1 Std.",babyTip:"Aufzug vorhanden. Abends beleuchtet und kühler.",directions:"Plaza de la Encarnación.",category:"kultur",lat:37.39,lng:-5.99,budget:5},
+    {id:"s6",title:"Triana-Viertel",description:"Lebhaftes Töpfer- und Flamenco-Viertel am anderen Flussufer.",duration:"2 Std.",babyTip:"Breite Gehwege. Nachmittags ruhiger.",directions:"Über die Puente de Triana.",category:"kultur",lat:37.38,lng:-6.00,budget:0},
+  ],
+  teneriffa:[
+    {id:"t1",title:"Playa de Las Teresitas",description:"Schönster Strand mit importiertem Saharasand. Geschützt, flach.",duration:"Halber Tag",babyTip:"Ruhiges Wasser – sicher für Babys.",directions:"Im Norden bei Santa Cruz.",category:"strand",lat:28.52,lng:-16.18,budget:0},
+    {id:"t2",title:"Teide Aussichtspunkt",description:"Mirador de la Ruleta – spektakulärer Blick auf den Vulkan.",duration:"2–3 Std.",babyTip:"Auf 2.000m kühler – Jacke für Cara.",directions:"TF-21, El Portillo.",category:"natur",lat:28.27,lng:-16.56,budget:0},
+    {id:"t3",title:"Loro Parque",description:"Weltberühmter Zoo mit Orcas, Delfinen und Gorillas.",duration:"Ganzer Tag",babyTip:"Viele Schattenbereiche. Kinderwagen ideal.",directions:"Puerto de la Cruz.",category:"natur",lat:28.41,lng:-16.57,budget:40},
+    {id:"t4",title:"Bergdorf Masca",description:"Spektakulärstes Bergdorf. Kurvenreiche Fahrt als Erlebnis.",duration:"2–3 Std.",babyTip:"Sera-Gurt sichern. Nur Aussicht, nicht wandern.",directions:"Teno-Gebirge, 1,5 Std.",category:"natur",lat:28.31,lng:-16.84,budget:0},
+    {id:"t5",title:"Siam Park",description:"Einer der weltbesten Wasserparks mit Baby-Pool-Bereich.",duration:"Halber Tag",babyTip:"Baby-Bereich 30 cm Tiefe. Vor 12 Uhr.",directions:"Adeje.",category:"entspannung",lat:28.07,lng:-16.73,budget:35},
+    {id:"t6",title:"Abendessen Costa Adeje",description:"Strandrestaurants mit frischem Fisch und Meerblick.",duration:"2 Std.",babyTip:"Viele familienfreundliche Restaurants mit Hochstühlen.",directions:"Costa Adeje Promenade.",category:"essen",lat:28.08,lng:-16.73,budget:45},
+  ],
+  kreuzfahrt:[
+    {id:"k1",title:"Deck-Spaziergang bei Sonnenaufgang",description:"Morgens vor dem Frühstück eine Runde auf dem leeren Deck. Atlantik-Stille.",duration:"30–45 Min.",babyTip:"Cara liebt Meeresluft. Sonnencreme schon morgens.",directions:"Oberdeck.",category:"entspannung",lat:28.10,lng:-15.41,budget:0},
+    {id:"k2",title:"La Palma: Caldera-Aussicht",description:"Atemberaubender Blick auf die riesige Caldera – per Bus erreichbar.",duration:"3–4 Std.",babyTip:"Sehr reine Luft. Bus ab Hafen.",directions:"Santa Cruz de La Palma.",category:"natur",lat:28.66,lng:-17.86,budget:15},
+    {id:"k3",title:"Lanzarote: Jameos del Agua",description:"Lavahöhlen mit unterirdischem See und blinden Albino-Krebsen.",duration:"1,5 Std.",babyTip:"Tragehilfe in Höhlen. ~20°C – angenehm.",directions:"Haría, Shuttle ab Hafen.",category:"kultur",lat:29.16,lng:-13.44,budget:11},
+    {id:"k4",title:"Gran Canaria: Maspalomas",description:"Riesige Sanddünen wie eine Mini-Sahara.",duration:"2–3 Std.",babyTip:"Weicher Sand für Cara. Früh morgens.",directions:"Maspalomas, Südküste.",category:"strand",lat:27.74,lng:-15.59,budget:0},
+    {id:"k5",title:"Bord-Pool & Buffet",description:"An Seetagen: Entspannen am Pool, riesige Buffets.",duration:"Nach Belieben",babyTip:"Baby-Pool vorhanden. Babygläschen in Bordküche.",directions:"Pool-Deck.",category:"entspannung",lat:28.10,lng:-15.41,budget:0},
+    {id:"k6",title:"Fuerteventura: Corralejo",description:"Weißer Sandstrand-Nationalpark – einer der schönsten Europas.",duration:"Halber Tag",babyTip:"Feiner Sand ideal. Früh hingehen.",directions:"Corralejo.",category:"strand",lat:28.73,lng:-13.86,budget:0},
+  ],
+  offen:[
+    {id:"o1",title:"Lissabon: Belém",description:"Jerónimos-Kloster und Torre de Belém. Hier wurde der Pastel de Nata erfunden!",duration:"Halber Tag",babyTip:"Breite Gehwege für Kinderwagen.",directions:"Straßenbahn 15E.",category:"kultur",lat:38.70,lng:-9.21,budget:0},
+    {id:"o2",title:"Sintra Schlösser",description:"UNESCO-Welterbe mit farbenfrohen Schlössern.",duration:"Ganzer Tag",babyTip:"Tragehilfe empfohlen. Früh morgens.",directions:"30 Min. Zug ab Rossio.",category:"kultur",lat:38.79,lng:-9.39,budget:14},
+    {id:"o3",title:"Lagos & Praia Dona Ana",description:"Altstadt und traumhafter Strand mit goldenen Felstürmen.",duration:"Ganzer Tag",babyTip:"Ruhiges Wasser. Kinderwagen möglich.",directions:"Zug ab Faro (2 Std.).",category:"strand",lat:37.10,lng:-8.67,budget:0},
+    {id:"o4",title:"Évora: Römerstadt",description:"UNESCO-Römerstadt mit Tempel und Knochenkapelle.",duration:"Halber Tag",babyTip:"Kompakt, alles zu Fuß.",directions:"1,5 Std. Auto.",category:"kultur",lat:38.57,lng:-7.91,budget:5},
+    {id:"o5",title:"Alentejo Weingut",description:"Beste Weine Portugals mit Familienführungen.",duration:"2–3 Std.",babyTip:"Herdade do Esporão familienfreundlich.",directions:"Reguengos de Monsaraz.",category:"essen",lat:38.42,lng:-7.53,budget:20},
+    {id:"o6",title:"Cascais Küste",description:"Glamouröse Küstenstraße mit Hafen und Buchten.",duration:"Halber Tag",babyTip:"Flache Promenade. Familienfreundliche Cafés.",directions:"40 Min. Zug ab Lissabon.",category:"entspannung",lat:38.70,lng:-9.42,budget:0},
+  ],
+};
+
+const WDAYS=["So","Mo","Di","Mi","Do","Fr","Sa"];
+function fmtDate(iso){const d=new Date(iso+"T12:00:00Z");return `${WDAYS[d.getUTCDay()]}, ${d.getUTCDate()}.${d.getUTCMonth()+1}.`;}
+function fmtShort(iso){const d=new Date(iso+"T12:00:00Z");return `${d.getUTCDate()}.${d.getUTCMonth()+1}.`;}
+function today(){return new Date().toISOString().slice(0,10);}
+
+// ── State ─────────────────────────────────────────────────
+const S = {
+  tab:"home", stationId:null, subView:null,
+  store:{}, weather:{}, syncOk:false,
+  user: localStorage.getItem("rp_user")||null,
+  dayTarget:null, aiLoading:false,
+  aiLustQuery:"", aiLustResults:[],
+  manualForm:{title:"",description:"",babyTip:"",directions:"",duration:"",category:"natur",budget:0},
+  activeFilter:"all",
+  summaryDate: null, summaryStation:null,
+  summaryNotes:"", summaryText:"", summaryBusy:false,
+  hotelForm:{name:"",address:"",note:""},
+};
+
+// ── Sync ──────────────────────────────────────────────────
+function startSync(){
+  onSnapshot(doc(db,"reiseplan",DBDOC), snap=>{
+    if(snap.exists()) S.store=snap.data();
+    else { const d={}; STATIONS.forEach(st=>{d[st.id]={activities:PRESET[st.id],custom:[],summaries:{},hotel:null};}); setDoc(doc(db,"reiseplan",DBDOC),d); S.store=d; }
+    S.syncOk=true; render();
+  }, ()=>{ S.syncOk=false; render(); });
+}
+async function persist(ns){ S.store=ns; render(); try{await setDoc(doc(db,"reiseplan",DBDOC),ns);}catch(e){console.error(e);} }
+
+function sd(id){ return { activities:S.store[id]?.activities??PRESET[id]??[], custom:S.store[id]?.custom??[], summaries:S.store[id]?.summaries??{}, hotel:S.store[id]?.hotel??null }; }
+function allItems(id){ return [...sd(id).activities,...sd(id).custom]; }
+
+// ── Weather ───────────────────────────────────────────────
+async function fetchWeather(){
+  for(const st of STATIONS){
+    try{
+      const r=await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${st.lat}&longitude=${st.lng}&current=temperature_2m,weathercode&timezone=auto`);
+      const d=await r.json();
+      const code=d.current.weathercode, temp=Math.round(d.current.temperature_2m);
+      const ic={0:"☀️",1:"🌤",2:"⛅",3:"☁️",51:"🌦",61:"🌧",80:"🌦",95:"⛈"};
+      S.weather[st.id]={temp,icon:ic[code]||(code<=3?"☀️":code<=60?"🌦":"🌧")};
+    }catch(e){}
+  }
+  render();
+}
+
+// ── AI ────────────────────────────────────────────────────
+async function callClaude(prompt, maxTokens=600){
+  const r=await fetch("https://api.anthropic.com/v1/messages",{
+    method:"POST",
+    headers:{"Content-Type":"application/json","anthropic-dangerous-direct-browser-access":"true"},
+    body:JSON.stringify({model:"claude-sonnet-4-20250514",max_tokens:maxTokens,messages:[{role:"user",content:prompt}]})
+  });
+  const d=await r.json();
+  if(d.error) throw new Error(d.error.message);
+  return d.content?.[0]?.text||"";
+}
+
+async function doAiLust(stationName, query){
+  S.aiLoading=true; S.aiLustResults=[]; render();
+  try{
+    const text=await callClaude(`Reiseexperte. Wir sind in ${stationName} mit Baby (11 Monate). Wir haben Lust auf: "${query}".
+Gib uns 3 konkrete Aktivitätsvorschläge. Antworte NUR mit JSON-Array ohne Markdown:
+[{"title":"...","description":"...","babyTip":"...","directions":"...","duration":"...","category":"natur","budget":0}]
+Kategorien: strand natur kultur essen entspannung. budget=Kosten pro Person in Euro. Auf Deutsch.`, 800);
+    const s=text.indexOf("["),e=text.lastIndexOf("]");
+    if(s!==-1&&e!==-1) S.aiLustResults=JSON.parse(text.slice(s,e+1));
+  }catch(e){ showToast("KI-Fehler – bitte erneut versuchen"); }
+  S.aiLoading=false; render();
+}
+
+async function enrichAndAdd(title, stationName, stationId){
+  let enriched={description:"",babyTip:"",directions:"",duration:"",category:"natur",budget:0};
+  try{
+    const text=await callClaude(`Aktivität "${title}" in ${stationName}, Baby 11 Monate. NUR JSON ohne Markdown: {"description":"...","babyTip":"...","directions":"...","duration":"...","category":"natur","budget":0}. Auf Deutsch.`);
+    const s=text.indexOf("{"),e=text.lastIndexOf("}");
+    if(s!==-1&&e!==-1) enriched=JSON.parse(text.slice(s,e+1));
+  }catch(e){}
+  const d=sd(stationId);
+  const item={...enriched,title,id:Date.now().toString(),ratings:{}};
+  await persist({...S.store,[stationId]:{...sd(stationId),custom:[...d.custom,item]}});
+  showToast("✅ Hinzugefügt!");
+}
+
+async function generateSummary(stationId, date, activities, notes){
+  S.summaryBusy=true; render();
+  const st=STATIONS.find(x=>x.id===stationId);
+  try{
+    const actList=activities.map(a=>`- ${a.title}${a.note?` (Notiz: ${a.note})`:""}`).join("\n");
+    const text=await callClaude(`Du schreibst einen kurzen, herzlichen Reisebericht-Eintrag für Oma und Opa. Familie mit Baby Cara (11 Monate).
+Station: ${st.name} (${st.subtitle})
+Datum: ${fmtDate(date)}
+Aktivitäten des Tages:\n${actList||"Entspannter Tag"}
+Eigene Notizen: ${notes||"keine"}
+
+Schreibe einen schönen, persönlichen Text (ca. 150 Wörter) auf Deutsch. Erwähne Cara und das Wetter/Stimmung. Kein "Liebe Oma und Opa" – direkt mit dem Erlebnis starten.`, 400);
+    S.summaryText=text;
+  }catch(e){ S.summaryText="KI-Fehler – bitte erneut versuchen."; }
+  S.summaryBusy=false; render();
+}
+
+async function saveSummary(stationId, date, text){
+  const d=sd(stationId);
+  const summaries={...d.summaries,[date]:{text,createdAt:new Date().toISOString()}};
+  await persist({...S.store,[stationId]:{...sd(stationId),summaries}});
+  showToast("📖 Tagebucheintrag gespeichert!");
+}
+
+// ── Actions ───────────────────────────────────────────────
+async function toggleRating(stationId,itemId,isCustom,who){
+  const d=sd(stationId);
+  const key=isCustom?"custom":"activities";
+  const items=(d[key]||[]).map(a=>{
+    if((a.id||a.title)!==itemId) return a;
+    return {...a,ratings:{...(a.ratings||{}),[who]:!(a.ratings||{})[who]}};
+  });
+  await persist({...S.store,[stationId]:{...sd(stationId),[key]:items}});
+  const item=items.find(a=>(a.id||a.title)===itemId);
+  if(item?.ratings?.thilo&&item?.ratings?.jessi) showToast("❤️ Beide mögen das!");
+}
+
+async function setDay(stationId,itemId,isCustom,day){
+  const d=sd(stationId);
+  const key=isCustom?"custom":"activities";
+  const items=(d[key]||[]).map(a=>{
+    if((a.id||a.title)!==itemId) return a;
+    return {...a,plannedDay:day};
+  });
+  await persist({...S.store,[stationId]:{...sd(stationId),[key]:items}});
+  S.subView=null; render();
+}
+
+async function deleteItem(stationId,itemId,isCustom){
+  const d=sd(stationId);
+  const key=isCustom?"custom":"activities";
+  const items=(d[key]||[]).filter(a=>(a.id||a.title)!==itemId);
+  await persist({...S.store,[stationId]:{...sd(stationId),[key]:items}});
+  showToast("🗑 Gelöscht");
+}
+
+async function saveHotel(stationId){
+  const f=S.hotelForm;
+  if(!f.name.trim()) return;
+  await persist({...S.store,[stationId]:{...sd(stationId),hotel:{confirmed:true,...f}}});
+  S.subView=null; S.hotelForm={name:"",address:"",note:""};
+  showToast("🏨 Hotel gespeichert!");
+}
+
+// ── DOM ───────────────────────────────────────────────────
+function el(tag,attrs={},...kids){
+  const e=document.createElement(tag);
+  for(const[k,v] of Object.entries(attrs)){
+    if(k==="style"&&typeof v==="object") Object.assign(e.style,v);
+    else if(k.startsWith("on")) e.addEventListener(k.slice(2).toLowerCase(),v);
+    else if(k==="cls") e.className=v;
+    else if(k==="html") e.innerHTML=v;
+    else e[k]=v;
+  }
+  for(const kid of kids){
+    if(kid==null) continue;
+    e.appendChild(typeof kid==="string"?document.createTextNode(kid):kid);
+  }
+  return e;
+}
+
+function showToast(msg){
+  const t=document.getElementById("toast");
+  t.textContent=msg; t.classList.add("show");
+  setTimeout(()=>t.classList.remove("show"),2200);
+}
+
+// ── MENU ──────────────────────────────────────────────────
+window.closeMenu=function(){
+  document.getElementById("menu-overlay").classList.remove("open");
+};
+
+function openMenu(){
+  const panel=document.getElementById("menu-panel");
+  panel.innerHTML="";
+  const st=STATIONS.find(x=>x.id===S.stationId)||STATIONS[0];
+
+  // Header
+  const hdr=el("div",{style:{background:`linear-gradient(135deg,${st.color},${st.color}CC)`,padding:"52px 24px 24px",color:"white"}});
+  hdr.innerHTML=`<div style="font-family:'Fraunces',serif;font-size:28px;font-weight:700;letter-spacing:-0.03em">Reiseplan 2026</div><div style="font-size:13px;opacity:0.8;margin-top:4px">Thilo, Jessi & Cara 👶</div>`;
+  panel.appendChild(hdr);
+
+  const nav=el("div",{style:{padding:"12px 0",flex:"1"}});
+  const items=[
+    {icon:"🏠",label:"Startseite",action:()=>{S.tab="home";S.stationId=null;S.subView=null;render();closeMenu();}},
+    {icon:"📅",label:"Kalender",action:()=>{S.tab="calendar";S.stationId=null;render();closeMenu();}},
+    {icon:"❤️",label:"Match-Ansicht",action:()=>{S.tab="match";S.stationId=null;render();closeMenu();}},
+    {icon:"📖",label:"Reisetagebuch",action:()=>{S.tab="diary";S.stationId=null;render();closeMenu();}},
+    {icon:"👶",label:"Cara-Momente",action:()=>{showToast("Kommt bald!");closeMenu();}},
+    {icon:"🧳",label:"Packliste",action:()=>{showToast("Kommt bald!");closeMenu();}},
+  ];
+  items.forEach(({icon,label,action})=>{
+    const b=el("button",{
+      style:{width:"100%",display:"flex",alignItems:"center",gap:"14px",padding:"14px 20px",background:"none",border:"none",fontSize:"15px",fontWeight:"600",color:"var(--text)",textAlign:"left"},
+      onClick:action
+    },icon,label);
+    nav.appendChild(b);
+  });
+  panel.appendChild(nav);
+
+  // User switch at bottom
+  const foot=el("div",{style:{padding:"16px 20px",borderTop:"1px solid var(--border)"}});
+  foot.innerHTML=`<div style="font-size:11px;color:var(--text3);font-weight:600;margin-bottom:10px;text-transform:uppercase;letter-spacing:0.5px">Du bist</div>`;
+  const row=el("div",{style:{display:"flex",gap:"8px"}});
+  ["Thilo","Jessi"].forEach(name=>{
+    const active=S.user===name;
+    const b=el("button",{
+      style:{flex:"1",padding:"10px",borderRadius:"12px",border:"none",background:active?(name==="Thilo"?"#E8845A":"#5B87C5"):"var(--bg2)",color:active?"white":"var(--text2)",fontSize:"15px",fontWeight:800},
+      onClick:()=>{S.user=name;localStorage.setItem("rp_user",name);closeMenu();render();}
+    },name);
+    row.appendChild(b);
+  });
+  foot.appendChild(row);
+  panel.appendChild(foot);
+
+  document.getElementById("menu-overlay").classList.add("open");
+}
+
+// ── Views ─────────────────────────────────────────────────
+
+function renderHome(){
+  const wrap=el("div",{cls:"fade-up"});
+
+  // Hero
+  const hero=el("div",{style:{background:`linear-gradient(160deg,#2C4A3E 0%,#1A3028 100%)`,padding:"0 20px 28px",paddingTop:"calc(var(--safe-top) + 16px)"}});
+  const topRow=el("div",{style:{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:"20px"}});
+  const burger=el("button",{style:{background:"rgba(255,255,255,0.12)",border:"none",borderRadius:"12px",padding:"9px 11px",color:"white",display:"flex",flexDirection:"column",gap:"4px"},onClick:openMenu});
+  for(let i=0;i<3;i++) burger.appendChild(el("div",{style:{width:"18px",height:"2px",background:"white",borderRadius:"2px"}}));
+  const userPill=el("div",{style:{background:"rgba(255,255,255,0.12)",borderRadius:"20px",padding:"7px 14px",fontSize:"13px",color:"rgba(255,255,255,0.9)",fontWeight:700}});
+  userPill.textContent=S.user?`👋 ${S.user}`:"Wer bist du?";
+  if(!S.user) userPill.onclick=openMenu;
+  topRow.appendChild(burger); topRow.appendChild(userPill);
+
+  const title=el("div",{cls:"display",style:{fontSize:"36px",color:"white",lineHeight:1.1,marginBottom:"8px"}});
+  title.textContent="34 Tage.\nFamilien-Abenteuer.";
+  title.style.whiteSpace="pre-line";
+  const sub=el("div",{style:{fontSize:"14px",color:"rgba(255,255,255,0.6)",fontFamily:"'Fraunces',serif",fontStyle:"italic"}});
+  sub.textContent="7. März – 10. April 2026";
+
+  // Progress pill
+  let totalAll=0,plannedAll=0;
+  STATIONS.forEach(st=>{const items=allItems(st.id);totalAll+=items.length;plannedAll+=items.filter(a=>a.plannedDay).length;});
+  const prog=el("div",{style:{marginTop:"20px",background:"rgba(255,255,255,0.1)",borderRadius:"20px",padding:"12px 16px"}});
+  prog.innerHTML=`<div style="display:flex;justify-content:space-between;margin-bottom:8px"><span style="font-size:12px;color:rgba(255,255,255,0.7);font-weight:600">${plannedAll} von ${totalAll} Aktivitäten geplant</span><span style="font-size:12px;color:rgba(255,255,255,0.5)">${totalAll?Math.round(plannedAll/totalAll*100):0}%</span></div><div style="height:4px;background:rgba(255,255,255,0.15);border-radius:2px;overflow:hidden"><div style="height:100%;width:${totalAll?Math.round(plannedAll/totalAll*100):0}%;background:linear-gradient(90deg,#7ECFB0,#4A9B7F);border-radius:2px;transition:width 0.6s"></div></div>`;
+
+  hero.appendChild(topRow); hero.appendChild(title); hero.appendChild(sub); hero.appendChild(prog);
+  wrap.appendChild(hero);
+
+  // User select if not set
+  if(!S.user){
+    const us=el("div",{style:{padding:"16px",background:"#FFF9E6",borderBottom:"1px solid #F0D080"}});
+    us.innerHTML=`<div style="font-size:14px;font-weight:700;color:#8A6A00;margin-bottom:10px">👋 Wer bist du?</div>`;
+    const r=el("div",{style:{display:"flex",gap:"10px"}});
+    ["Thilo","Jessi"].forEach(name=>{
+      const b=el("button",{
+        style:{flex:"1",padding:"13px",borderRadius:"14px",border:"none",background:name==="Thilo"?"#E8845A":"#5B87C5",color:"white",fontSize:"16px",fontWeight:900},
+        onClick:()=>{ S.user=name; localStorage.setItem("rp_user",name); render(); }
+      },name);
+      r.appendChild(b);
+    });
+    us.appendChild(r); wrap.appendChild(us);
+  }
+
+  // Today's prompt
+  const todayDate=today();
+  const todayStation=STATIONS.find(st=>st.dateRange?.includes(todayDate));
+  if(todayStation){
+    const todayItems=allItems(todayStation.id).filter(a=>a.plannedDay===todayDate);
+    const hasSummary=sd(todayStation.id).summaries?.[todayDate];
+    if(!hasSummary){
+      const prompt=el("div",{cls:"summary-prompt",style:{margin:"16px 16px 0"},onClick:()=>{
+        S.tab="diary"; S.summaryDate=todayDate; S.summaryStation=todayStation.id; render();
+      }});
+      prompt.innerHTML=`<span style="font-size:28px">✍️</span><div><div style="font-size:14px;font-weight:800;color:#8A6A00">Heute zusammenfassen</div><div style="font-size:12px;color:#A07A00;margin-top:2px">${todayStation.emoji} ${todayStation.name} · ${todayItems.length} Aktivität${todayItems.length!==1?"en":""} geplant</div></div><span style="margin-left:auto;font-size:20px;color:#C0A000">›</span>`;
+      wrap.appendChild(prompt);
+    }
+  }
+
+  // Stations
+  const list=el("div",{style:{padding:"16px"}});
+  const slbl=el("div",{cls:"sec-lbl"},"Deine Stationen");
+  list.appendChild(slbl);
+
+  STATIONS.forEach((st,i)=>{
+    const items=allItems(st.id);
+    const planned=items.filter(a=>a.plannedDay).length;
+    const both=items.filter(a=>a.ratings?.thilo&&a.ratings?.jessi).length;
+    const w=S.weather[st.id];
+    const hotel=sd(st.id).hotel||st.hotel;
+
+    const card=el("div",{cls:"card",style:{marginBottom:"12px",overflow:"hidden",cursor:"pointer",animationDelay:`${i*0.05}s`},cls:"card fade-up",onClick:()=>{S.stationId=st.id;S.subView=null;S.activeFilter="all";render();}});
+
+    // Color strip top
+    const strip=el("div",{style:{background:`linear-gradient(135deg,${st.color},${st.color}BB)`,padding:"16px 16px 14px"}});
+    strip.innerHTML=`<div style="display:flex;justify-content:space-between;align-items:flex-start">
+      <div>
+        <div style="font-family:'Fraunces',serif;font-size:20px;font-weight:700;color:white;letter-spacing:-0.02em">${st.emoji} ${st.name}</div>
+        <div style="font-size:12px;color:rgba(255,255,255,0.75);margin-top:2px">${st.subtitle}</div>
+      </div>
+      <div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px">
+        ${w?`<div style="background:rgba(255,255,255,0.2);border-radius:12px;padding:3px 9px;font-size:12px;color:white;font-weight:700">${w.icon} ${w.temp}°C</div>`:""}
+        <div style="background:rgba(255,255,255,0.2);border-radius:12px;padding:3px 9px;font-size:11px;color:white;font-weight:700">${items.length} Ideen</div>
+        ${planned>0?`<div style="background:rgba(255,255,255,0.15);border-radius:12px;padding:3px 9px;font-size:11px;color:white;font-weight:700">${planned} 📅 geplant</div>`:""}
+        ${both>0?`<div style="background:rgba(255,255,255,0.15);border-radius:12px;padding:3px 9px;font-size:11px;color:rgba(255,220,200,1);font-weight:700">${both} ❤️ match</div>`:""}
+      </div>
+    </div>`;
+
+    // Progress
+    const pb=el("div",{style:{marginTop:"10px",height:"3px",background:"rgba(255,255,255,0.2)",borderRadius:"2px",overflow:"hidden"}});
+    pb.appendChild(el("div",{style:{height:"100%",width:`${items.length?Math.round(planned/items.length*100):0}%`,background:"rgba(255,255,255,0.7)",borderRadius:"2px",transition:"width 0.6s"}}));
+    strip.appendChild(pb);
+    card.appendChild(strip);
+
+    // Bottom
+    const bot=el("div",{style:{padding:"10px 16px",display:"flex",justifyContent:"space-between",alignItems:"center"}});
+    const botLeft=el("div");
+    botLeft.innerHTML=`<div style="font-size:12px;color:var(--text3)">📅 ${st.dates}</div>`;
+    if(hotel?.confirmed&&hotel.name&&hotel.name!=="Auf dem Schiff"){
+      botLeft.innerHTML+=`<div style="font-size:11px;color:${st.color};font-weight:600;margin-top:2px">🏨 ${hotel.name}</div>`;
+    } else if(!hotel?.confirmed){
+      botLeft.innerHTML+=`<div style="font-size:11px;color:#E8845A;font-weight:600;margin-top:2px">🏨 Hotel noch offen</div>`;
+    }
+    bot.appendChild(botLeft);
+    bot.appendChild(el("span",{style:{color:"var(--text3)",fontSize:"22px",fontWeight:300}},"›"));
+    card.appendChild(bot);
+    list.appendChild(card);
+  });
+
+  wrap.appendChild(list);
+  return wrap;
+}
+
+// ── Station View ──────────────────────────────────────────
+function renderStation(){
+  const st=STATIONS.find(x=>x.id===S.stationId);
+  const wrap=el("div",{cls:"slide-in"});
+
+  // Sticky topbar
+  const tb=el("div",{cls:"topbar"});
+  const backBtn=el("button",{cls:"back-btn",onClick:()=>{S.stationId=null;render();}});
+  backBtn.innerHTML=`<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="15 18 9 12 15 6"/></svg> Zurück`;
+  const tbRight=el("div",{style:{display:"flex",alignItems:"center",gap:"8px"}});
+  const mapBtn=el("button",{
+    style:{background:`${st.tint}`,border:`1px solid ${st.color}30`,borderRadius:"20px",padding:"7px 12px",fontSize:"12px",fontWeight:700,color:st.color},
+    onClick:()=>{S.subView="map";render();}
+  },"🗺 Karte");
+  tbRight.appendChild(mapBtn);
+  const topRow2=el("div",{style:{display:"flex",justifyContent:"space-between",alignItems:"center"}});
+  topRow2.appendChild(backBtn); topRow2.appendChild(tbRight);
+
+  const titleEl=el("div",{style:{display:"flex",justifyContent:"space-between",alignItems:"flex-end"}});
+  const tl=el("div");
+  tl.innerHTML=`<div style="font-family:'Fraunces',serif;font-size:26px;font-weight:700;letter-spacing:-0.03em">${st.emoji} ${st.name}</div><div style="font-size:13px;color:var(--text3);margin-top:2px">${st.subtitle} · ${st.dates}</div>`;
+  const w=S.weather[st.id];
+  if(w) titleEl.appendChild(el("div",{style:{fontSize:"22px",marginBottom:"4px"}},`${w.icon} ${w.temp}°C`));
+  titleEl.appendChild(tl);
+
+  tb.appendChild(topRow2); tb.appendChild(titleEl);
+  wrap.appendChild(tb);
+
+  const content=el("div",{style:{padding:"16px 16px 120px"}});
+
+  // Hotel card
+  renderHotelCard(st,content);
+
+  // Cruise next port
+  if(st.hotel?.isCruise && st.cruisePorts){
+    renderCruiseCard(st,content);
+  }
+
+  // KI Lust feature
+  renderLustFeature(st,content);
+
+  // Filter chips
+  const filters=el("div",{style:{display:"flex",gap:"7px",overflowX:"auto",paddingBottom:"4px",marginBottom:"4px"}});
+  filters.style.cssText+="scrollbar-width:none;";
+  const allCats=[{id:"all",label:"Alle",emoji:"⭐"},{id:"match",label:"Match ❤️",emoji:""},...Object.entries(CATS).map(([id,c])=>({id,...c}))];
+  allCats.forEach(cat=>{
+    const active=S.activeFilter===cat.id;
+    const chip=el("button",{
+      cls:`chip${active?" active":""}`,
+      style:active?{"--chip-color":cat.color||st.color}:{},
+      onClick:()=>{S.activeFilter=cat.id;render();}
+    },`${cat.emoji||""} ${cat.label}`.trim());
+    filters.appendChild(chip);
+  });
+  content.appendChild(filters);
+
+  // Items
+  const d=sd(st.id);
+  function filterItems(items){
+    if(S.activeFilter==="all") return items;
+    if(S.activeFilter==="match") return items.filter(a=>a.ratings?.thilo&&a.ratings?.jessi);
+    return items.filter(a=>a.category===S.activeFilter);
+  }
+
+  const fa=filterItems(d.activities), fc=filterItems(d.custom);
+  if(fa.length>0){ content.appendChild(el("div",{cls:"sec-lbl"},"✨ Vorschläge")); fa.forEach(a=>content.appendChild(renderCard(a,st,false))); }
+  if(fc.length>0){ content.appendChild(el("div",{cls:"sec-lbl"},"📝 Eigene Ideen")); fc.forEach(a=>content.appendChild(renderCard(a,st,true))); }
+  if(fa.length===0&&fc.length===0){
+    const e=el("div",{style:{textAlign:"center",padding:"40px 20px",color:"var(--text3)",fontSize:"14px"}});
+    e.textContent=S.activeFilter==="match"?"Noch kein gemeinsamer Match – bewertet Aktivitäten!":"Keine Aktivitäten in dieser Kategorie.";
+    content.appendChild(e);
+  }
+
+  wrap.appendChild(content);
+
+  // FAB
+  const fab=el("button",{
+    style:{position:"fixed",bottom:`calc(var(--safe-bot) + 72px)`,right:"20px",background:st.color,color:"white",border:"none",borderRadius:"50%",width:"56px",height:"56px",display:"flex",alignItems:"center",justifyContent:"center",boxShadow:`0 6px 24px ${st.color}60`,zIndex:90},
+    onClick:()=>{S.subView="add";render();}
+  });
+  fab.innerHTML=`<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>`;
+  wrap.appendChild(fab);
+  return wrap;
+}
+
+function renderHotelCard(st,container){
+  const d=sd(st.id);
+  const hotel=d.hotel||st.hotel;
+
+  const card=el("div",{style:{marginBottom:"14px",borderRadius:"16px",overflow:"hidden",border:`1.5px solid ${st.color}40`}});
+
+  if(hotel?.confirmed&&hotel.name){
+    const top=el("div",{style:{background:`linear-gradient(135deg,${st.tint},white)`,padding:"14px 16px"}});
+    top.innerHTML=`<div style="display:flex;align-items:center;gap:10px">
+      <div style="width:36px;height:36px;border-radius:10px;background:${st.color}20;display:flex;align-items:center;justify-content:center;font-size:18px">${st.hotel?.isCruise?"🚢":"🏨"}</div>
+      <div>
+        <div style="font-size:14px;font-weight:800;color:var(--text)">${hotel.name}</div>
+        ${hotel.address?`<div style="font-size:12px;color:var(--text3);margin-top:1px">${hotel.address}</div>`:""}
+        ${hotel.note?`<div style="font-size:11px;color:${st.color};margin-top:2px">💬 ${hotel.note}</div>`:""}
+      </div>
+      <div style="margin-left:auto;background:${st.color}15;border-radius:10px;padding:4px 10px;font-size:11px;font-weight:800;color:${st.color}">✓ Fix</div>
+    </div>`;
+    card.appendChild(top);
+  } else {
+    const top=el("div",{style:{background:"#FFF9E6",padding:"14px 16px",cursor:"pointer"},onClick:()=>{S.subView="hotel";render();}});
+    top.innerHTML=`<div style="display:flex;align-items:center;gap:10px">
+      <div style="width:36px;height:36px;border-radius:10px;background:#F0D08020;display:flex;align-items:center;justify-content:center;font-size:18px">🔍</div>
+      <div style="flex:1">
+        <div style="font-size:14px;font-weight:800;color:#8A6A00">Hotel noch nicht gebucht</div>
+        <div style="font-size:12px;color:#A07A00;margin-top:1px">Jetzt planen →</div>
+      </div>
+    </div>`;
+    if(st.hotel?.suggestions?.length){
+      const sug=el("div",{style:{padding:"10px 16px 14px",background:"#FFFBF0",borderTop:"1px solid #F0D08040"}});
+      sug.innerHTML=`<div style="font-size:11px;font-weight:700;color:#A07A00;margin-bottom:6px;text-transform:uppercase;letter-spacing:0.5px">KI-Empfehlungen</div>`;
+      const row=el("div",{style:{display:"flex",gap:"6px",flexWrap:"wrap"}});
+      (st.hotel.suggestions||[]).forEach(name=>{
+        const b=el("button",{
+          style:{padding:"5px 10px",borderRadius:"20px",border:"1.5px solid #E8C84040",background:"white",fontSize:"12px",fontWeight:600,color:"#8A6A00"},
+          onClick:()=>{S.hotelForm.name=name;S.subView="hotel";render();}
+        },name);
+        row.appendChild(b);
+      });
+      sug.appendChild(row); card.appendChild(top); card.appendChild(sug);
+      container.appendChild(card); return;
+    }
+    card.appendChild(top);
+  }
+  container.appendChild(card);
+}
+
+function renderCruiseCard(st,container){
+  const todayStr=today();
+  const todayPort=st.cruisePorts?.find(p=>p.date===todayStr);
+  const nextPort=st.cruisePorts?.find(p=>p.date>todayStr&&!p.seaDay);
+
+  const card=el("div",{style:{marginBottom:"14px",borderRadius:"16px",border:`1.5px solid ${st.color}30`,background:`linear-gradient(135deg,${st.tint},white)`,padding:"14px 16px"}});
+  card.innerHTML=`<div style="font-size:13px;font-weight:800;color:${st.color};margin-bottom:10px">🚢 Kreuzfahrt-Route</div>`;
+
+  const grid=el("div",{style:{display:"flex",gap:"8px",overflowX:"auto",paddingBottom:"4px"}});
+  grid.style.cssText+="scrollbar-width:none;";
+  st.cruisePorts.forEach(p=>{
+    const isToday=p.date===todayStr;
+    const past=p.date<todayStr;
+    const pill=el("div",{style:{flexShrink:0,padding:"8px 10px",borderRadius:"12px",background:isToday?st.color:past?"var(--bg3)":"white",border:`1px solid ${isToday?st.color:"var(--border)"}`,textAlign:"center",minWidth:"70px"}});
+    pill.innerHTML=`<div style="font-size:16px">${p.emoji}</div><div style="font-size:9px;font-weight:700;color:${isToday?"white":past?"var(--text3)":"var(--text)"};margin-top:2px;line-height:1.2">${p.port.split(",")[0]}</div><div style="font-size:9px;color:${isToday?"rgba(255,255,255,0.7)":"var(--text3)"};">${fmtShort(p.date)}</div>`;
+    grid.appendChild(pill);
+  });
+  card.appendChild(grid);
+  if(nextPort){ const n=el("div",{style:{marginTop:"10px",fontSize:"12px",color:"var(--text2)",fontWeight:600}}); n.textContent=`⚓ Nächster Hafen: ${nextPort.emoji} ${nextPort.port} · ${fmtDate(nextPort.date)}`; card.appendChild(n); }
+  container.appendChild(card);
+}
+
+function renderLustFeature(st,container){
+  const card=el("div",{cls:"card",style:{marginBottom:"16px",padding:"16px"}});
+  card.innerHTML=`<div style="display:flex;align-items:center;gap:8px;margin-bottom:10px"><span style="font-size:20px">🤔</span><div><div style="font-size:14px;font-weight:800">Worauf haben wir Lust?</div><div style="font-size:12px;color:var(--text3)">KI schlägt passende Aktivitäten vor</div></div></div>`;
+
+  const row=el("div",{style:{display:"flex",gap:"8px"}});
+  const inp=el("input",{placeholder:`z.B. "gemütlich essen", "Strand mit Cara"`,value:S.aiLustQuery,style:{flex:"1",borderRadius:"12px"}});
+  inp.addEventListener("input",e=>S.aiLustQuery=e.target.value);
+  inp.addEventListener("keydown",e=>{ if(e.key==="Enter"&&S.aiLustQuery.trim()) doAiLust(st.name,S.aiLustQuery.trim()); });
+  const btn=el("button",{
+    style:{background:st.color,color:"white",border:"none",borderRadius:"12px",padding:"0 16px",fontWeight:800,fontSize:"14px",whiteSpace:"nowrap",flexShrink:0,height:"48px"},
+    onClick:()=>{ if(S.aiLustQuery.trim()) doAiLust(st.name,S.aiLustQuery.trim()); }
+  }, S.aiLoading?"…":"✨ Los");
+  row.appendChild(inp); row.appendChild(btn);
+  card.appendChild(row);
+
+  // Quick chips
+  const chips=el("div",{style:{display:"flex",gap:"6px",marginTop:"8px",flexWrap:"wrap"}});
+  ["🍽️ Essen gehen","🏖️ Strandtag","👶 Baby-freundlich","🌿 Natur","😌 Entspannen"].forEach(label=>{
+    const c=el("button",{cls:"chip",style:{fontSize:"12px",padding:"5px 10px"},
+      onClick:()=>{S.aiLustQuery=label.slice(2).trim();doAiLust(st.name,S.aiLustQuery);}},label);
+    chips.appendChild(c);
+  });
+  card.appendChild(chips);
+
+  if(S.aiLoading){
+    const loading=el("div",{style:{marginTop:"12px",display:"flex",gap:"8px"}});
+    for(let i=0;i<3;i++){ const s=el("div",{cls:"shimmer",style:{height:"80px",borderRadius:"12px",flex:"1"}}); loading.appendChild(s); }
+    card.appendChild(loading);
+  }
+
+  if(S.aiLustResults.length>0){
+    const res=el("div",{style:{marginTop:"12px"}});
+    res.appendChild(el("div",{style:{fontSize:"12px",fontWeight:700,color:"var(--text3)",marginBottom:"8px"}},"KI-Vorschläge:"));
+    S.aiLustResults.forEach(act=>{
+      const catInfo=CATS[act.category]||CATS.natur;
+      const r=el("div",{style:{background:"var(--bg2)",borderRadius:"12px",padding:"12px",marginBottom:"8px",border:"1px solid var(--border)"}});
+      r.innerHTML=`<div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:4px">
+        <div style="font-size:14px;font-weight:800">${act.title}</div>
+        <span style="font-size:11px;padding:2px 8px;border-radius:10px;background:${catInfo.color}15;color:${catInfo.color};font-weight:700;white-space:nowrap;margin-left:8px">${catInfo.emoji} ${catInfo.label}</span>
+      </div>
+      <div style="font-size:12px;color:var(--text2);line-height:1.5;margin-bottom:8px">${act.description}</div>
+      ${act.babyTip?`<div style="font-size:11px;background:#FFF9E6;border-left:3px solid #D4A843;padding:5px 8px;border-radius:0 8px 8px 0;color:#8A6A00;margin-bottom:8px">👶 ${act.babyTip}</div>`:""}`;
+      const addBtn=el("button",{
+        style:{width:"100%",background:st.color,color:"white",border:"none",borderRadius:"10px",padding:"8px",fontSize:"13px",fontWeight:800},
+        onClick:async()=>{
+          const d2=sd(st.id);
+          const item={...act,id:Date.now().toString(),ratings:{}};
+          await persist({...S.store,[st.id]:{...sd(st.id),custom:[...d2.custom,item]}});
+          showToast("✅ Zu meiner Liste hinzugefügt!");
+          S.aiLustResults=S.aiLustResults.filter(x=>x!==act); render();
+        }
+      },"+ Zu meiner Liste hinzufügen");
+      r.appendChild(addBtn);
+      res.appendChild(r);
+    });
+    card.appendChild(res);
+  }
+
+  container.appendChild(card);
+}
+
+function renderCard(act,st,isCustom){
+  const ratings=act.ratings||{};
+  const cat=act.category||"natur";
+  const catInfo=CATS[cat]||CATS.natur;
+  const itemId=act.id||act.title;
+  const isMatch=ratings.thilo&&ratings.jessi;
+
+  const card=el("div",{style:{
+    background:"white",borderRadius:"16px",padding:"14px 14px 12px",
+    marginBottom:"10px",border:isMatch?`1.5px solid ${st.color}60`:"1px solid var(--border)",
+    boxShadow:isMatch?`0 4px 20px ${st.color}20`:"var(--shadow)"
+  }});
+
+  const top=el("div",{style:{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:"4px"}});
+  const title=el("div",{style:{fontSize:"15px",fontWeight:"800",color:"var(--text)",flex:"1",lineHeight:"1.3",paddingRight:"8px"}}); title.textContent=act.title;
+  const catBadge=el("span",{style:{fontSize:"11px",padding:"3px 8px",borderRadius:"10px",background:catInfo.tint||catInfo.color+"15",color:catInfo.color,fontWeight:700,flexShrink:0}}); catBadge.textContent=`${catInfo.emoji} ${catInfo.label}`;
+  top.appendChild(title); top.appendChild(catBadge); card.appendChild(top);
+
+  if(act.duration){const d=el("div",{style:{fontSize:"12px",color:"var(--text3)",marginBottom:"5px"}},"⏱ "+act.duration);card.appendChild(d);}
+  if(act.description){const d=el("div",{style:{fontSize:"13px",color:"var(--text2)",lineHeight:"1.55",marginBottom:"8px"}});d.textContent=act.description;card.appendChild(d);}
+  if(act.babyTip){const d=el("div",{style:{background:"#FFF9E6",borderLeft:"3px solid #D4A843",padding:"6px 10px",fontSize:"12px",color:"#8A6A00",marginBottom:"8px",borderRadius:"0 8px 8px 0",lineHeight:"1.45"}});"👶 "+act.babyTip;d.textContent="👶 "+act.babyTip;card.appendChild(d);}
+  if(act.directions){const d=el("div",{style:{fontSize:"12px",color:"#5580AA",marginBottom:"8px",display:"flex",gap:"4px",alignItems:"flex-start"}});d.innerHTML=`<span style="flex-shrink:0">📍</span><span style="line-height:1.4">${act.directions}</span>`;card.appendChild(d);}
+
+  if(act.plannedDay||act.budget>0){
+    const row=el("div",{style:{display:"flex",gap:"6px",marginBottom:"8px",flexWrap:"wrap"}});
+    if(act.plannedDay){const t=el("div",{style:{display:"inline-flex",alignItems:"center",gap:"4px",padding:"3px 9px",borderRadius:"8px",background:st.tint,border:`1px solid ${st.color}30`,fontSize:"11px",fontWeight:700,color:st.color}});t.textContent="📅 "+fmtDate(act.plannedDay);row.appendChild(t);}
+    if(act.budget>0){const t=el("div",{style:{display:"inline-flex",alignItems:"center",gap:"4px",padding:"3px 9px",borderRadius:"8px",background:"var(--bg2)",fontSize:"11px",fontWeight:600,color:"var(--text3)"}});t.textContent="💶 "+act.budget+"€ p.P.";row.appendChild(t);}
+    card.appendChild(row);
+  }
+  if(act.note){const d=el("div",{style:{background:"var(--bg2)",borderRadius:"8px",padding:"7px 10px",fontSize:"12px",color:"var(--text2)",marginBottom:"8px",lineHeight:1.45}});d.textContent="💬 "+act.note;card.appendChild(d);}
+
+  // Actions
+  const actions=el("div",{style:{display:"flex",gap:"6px",borderTop:"1px solid var(--bg3)",paddingTop:"10px",marginTop:"4px"}});
+  const thiloActive=ratings.thilo, jessiActive=ratings.jessi;
+
+  const btnBase={display:"flex",alignItems:"center",justifyContent:"center",gap:"4px",borderRadius:"20px",padding:"7px 0",fontSize:"12px",fontWeight:700,border:"1.5px solid",cursor:"pointer"};
+  const thiloBtn=el("button",{
+    style:{...btnBase,flex:"1",background:thiloActive?"#E8845A10":"var(--bg2)",borderColor:thiloActive?"#E8845A":"transparent",color:thiloActive?"#E8845A":"var(--text3)"},
+    onClick:()=>toggleRating(st.id,itemId,isCustom,"thilo")
+  });
+  thiloBtn.innerHTML=`${thiloActive?'<svg width="13" height="13" viewBox="0 0 24 24" fill="#E8845A" stroke="#E8845A" stroke-width="2"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>':'<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#E8845A" stroke-width="2"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>'} Thilo`;
+  const jessiBtn=el("button",{
+    style:{...btnBase,flex:"1",background:jessiActive?"#5B87C510":"var(--bg2)",borderColor:jessiActive?"#5B87C5":"transparent",color:jessiActive?"#5B87C5":"var(--text3)"},
+    onClick:()=>toggleRating(st.id,itemId,isCustom,"jessi")
+  });
+  jessiBtn.innerHTML=`${jessiActive?'<svg width="13" height="13" viewBox="0 0 24 24" fill="#5B87C5" stroke="#5B87C5" stroke-width="2"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>':'<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#5B87C5" stroke-width="2"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>'} Jessi`;
+
+  const planBtn=el("button",{
+    style:{...btnBase,padding:"7px 10px",background:act.plannedDay?`${st.tint}`:"var(--bg2)",borderColor:act.plannedDay?`${st.color}40`:"transparent",color:act.plannedDay?st.color:"var(--text3)",whiteSpace:"nowrap"},
+    onClick:()=>{S.subView="dayPicker";S.dayTarget={itemId,isCustom};render();}
+  },"📅 "+(act.plannedDay?"Tag":"Planen"));
+
+  if(isCustom){
+    const del=el("button",{
+      style:{...btnBase,padding:"7px 10px",background:"#FF3B3010",borderColor:"transparent",color:"#FF3B30"},
+      onClick:()=>{ if(confirm(`"${act.title}" löschen?`)) deleteItem(st.id,itemId,true); }
+    },"🗑");
+    actions.appendChild(thiloBtn); actions.appendChild(jessiBtn); actions.appendChild(planBtn); actions.appendChild(del);
+  } else {
+    actions.appendChild(thiloBtn); actions.appendChild(jessiBtn); actions.appendChild(planBtn);
+  }
+  card.appendChild(actions);
+  return card;
+}
+
+// ── Day Picker ────────────────────────────────────────────
+function renderDayPicker(){
+  const st=STATIONS.find(x=>x.id===S.stationId);
+  const {itemId,isCustom}=S.dayTarget;
+  const item=allItems(st.id).find(a=>(a.id||a.title)===itemId);
+  const wrap=el("div",{cls:"slide-in"});
+  const tb=el("div",{cls:"topbar"});
+  const back=el("button",{cls:"back-btn",onClick:()=>{S.subView=null;render();}});
+  back.innerHTML=`<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="15 18 9 12 15 6"/></svg> Zurück`;
+  tb.appendChild(back);
+  tb.innerHTML+=`<div style="font-family:'Fraunces',serif;font-size:22px;font-weight:700">📅 Tag planen</div><div style="font-size:13px;color:var(--text3);margin-top:2px">${item?.title}</div>`;
+  wrap.appendChild(tb);
+  const content=el("div",{style:{padding:"16px 16px 80px"}});
+  content.appendChild(el("div",{cls:"sec-lbl"},"Wählt einen Tag:"));
+  st.dateRange.forEach(iso=>{
+    const chosen=item?.plannedDay===iso;
+    const btn=el("button",{
+      style:{width:"100%",display:"flex",alignItems:"center",gap:"10px",padding:"14px 16px",borderRadius:"14px",border:`1.5px solid ${chosen?st.color:"var(--border)"}`,marginBottom:"8px",background:chosen?st.tint:"white",color:chosen?st.color:"var(--text)",fontWeight:chosen?800:500,fontSize:"14px",cursor:"pointer"},
+      onClick:()=>setDay(st.id,itemId,isCustom,chosen?null:iso)
+    },fmtDate(iso));
+    if(chosen) btn.appendChild(el("span",{style:{marginLeft:"auto",fontSize:"12px",fontWeight:700}},`✓ gewählt`));
+    content.appendChild(btn);
+  });
+  if(item?.plannedDay) content.appendChild(el("button",{style:{width:"100%",padding:"13px",borderRadius:"14px",border:"1.5px solid #FF3B3030",background:"#FF3B3008",color:"#FF3B30",fontSize:"14px",fontWeight:600,marginTop:"4px",cursor:"pointer"},onClick:()=>setDay(st.id,itemId,isCustom,null)},"🗑 Tag entfernen"));
+  wrap.appendChild(content);
+  return wrap;
+}
+
+// ── Add ───────────────────────────────────────────────────
+function renderAdd(){
+  const st=STATIONS.find(x=>x.id===S.stationId);
+  const wrap=el("div",{cls:"slide-in"});
+  const tb=el("div",{cls:"topbar"});
+  const back=el("button",{cls:"back-btn",onClick:()=>{S.subView=null;render();}});
+  back.innerHTML=`<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="15 18 9 12 15 6"/></svg> Zurück`;
+  tb.appendChild(back);
+  tb.innerHTML+=`<div style="font-family:'Fraunces',serif;font-size:22px;font-weight:700">Eigene Idee</div><div style="font-size:13px;color:var(--text3)">${st.name}</div>`;
+  wrap.appendChild(tb);
+  const content=el("div",{style:{padding:"16px"}});
+
+  const aiCard=el("div",{cls:"card",style:{padding:"16px",marginBottom:"12px"}});
+  aiCard.innerHTML=`<div style="font-size:14px;font-weight:800;margin-bottom:3px">✨ KI ergänzt automatisch</div><div style="font-size:12px;color:var(--text3);margin-bottom:12px">Nur Titel eingeben – Rest wird ausgefüllt</div>`;
+  const inp=el("input",{placeholder:"z.B. Bootsausflug bei Sonnenuntergang",style:{marginBottom:"10px"}});
+  inp.value=S.addTitle||"";
+  inp.addEventListener("input",e=>S.addTitle=e.target.value);
+  const aiBtn=el("button",{
+    style:{width:"100%",background:st.color,color:"white",border:"none",borderRadius:"12px",padding:"14px",fontSize:"15px",fontWeight:800,display:"flex",alignItems:"center",justifyContent:"center",gap:"8px"},
+    onClick:async()=>{
+      if(!S.addTitle?.trim()) return;
+      S.aiLoading=true; render();
+      await enrichAndAdd(S.addTitle.trim(),st.name,st.id);
+      S.aiLoading=false; S.addTitle=""; S.subView=null; render();
+    }
+  }, S.aiLoading?"⏳ KI lädt…":"Hinzufügen mit KI ✨");
+  aiCard.appendChild(inp); aiCard.appendChild(aiBtn);
+  content.appendChild(aiCard);
+
+  const div=el("div",{style:{display:"flex",alignItems:"center",gap:"12px",margin:"4px 0 12px"}});
+  div.innerHTML=`<div style="flex:1;height:1px;background:var(--border)"></div><span style="font-size:12px;color:var(--text3);font-weight:600">oder</span><div style="flex:1;height:1px;background:var(--border)"></div>`;
+  content.appendChild(div);
+  content.appendChild(el("button",{style:{width:"100%",background:"var(--bg2)",color:"var(--text2)",border:"1px solid var(--border)",borderRadius:"14px",padding:"14px",fontSize:"14px",fontWeight:700},onClick:()=>{S.subView="addManual";render();}},"✏️ Manuell ausfüllen"));
+  wrap.appendChild(content);
+  return wrap;
+}
+
+function renderAddManual(){
+  const st=STATIONS.find(x=>x.id===S.stationId);
+  const f=S.manualForm;
+  const wrap=el("div",{cls:"slide-in"});
+  const tb=el("div",{cls:"topbar"});
+  const back=el("button",{cls:"back-btn",onClick:()=>{S.subView="add";render();}});
+  back.innerHTML=`<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="15 18 9 12 15 6"/></svg> Zurück`;
+  tb.appendChild(back);
+  tb.innerHTML+=`<div style="font-family:'Fraunces',serif;font-size:22px;font-weight:700">Manuell</div>`;
+  wrap.appendChild(tb);
+  const content=el("div",{style:{padding:"16px 16px 80px"}});
+  const lbl=t=>el("div",{style:{fontSize:"11px",fontWeight:700,textTransform:"uppercase",letterSpacing:"0.5px",color:"var(--text3)",margin:"0 0 5px"}},t);
+  const grp=()=>el("div",{style:{marginBottom:"14px"}});
+
+  [["Titel *","title","z.B. Abendspaziergang"],["Beschreibung","description","Was macht es besonders?",true],["Baby-Tipp 👶","babyTip","z.B. Morgens vor Mittagsschlaf"],["Weginfo","directions","Adresse oder Wegbeschreibung"],["Dauer","duration","z.B. 1–2 Stunden"],["Budget (€/Person)","budget","0","number"]].forEach(([l,k,ph,ta])=>{
+    const g=grp(); g.appendChild(lbl(l));
+    const el2=ta===true?el("textarea",{placeholder:ph}):el("input",{placeholder:ph,type:ta||"text"});
+    el2.value=f[k]||""; el2.addEventListener("input",e=>f[k]=e.target.value);
+    g.appendChild(el2); content.appendChild(g);
+  });
+
+  const cg=grp(); cg.appendChild(lbl("Kategorie"));
+  const cr=el("div",{style:{display:"flex",gap:"7px",flexWrap:"wrap"}});
+  Object.entries(CATS).forEach(([cat,info])=>{
+    const active=f.category===cat;
+    const b=el("button",{cls:`chip${active?" active":""}`,style:active?{"--chip-color":info.color}:{},onClick:()=>{f.category=cat;render();}},`${info.emoji} ${info.label}`);
+    cr.appendChild(b);
+  });
+  cg.appendChild(cr); content.appendChild(cg);
+  content.appendChild(el("button",{style:{width:"100%",background:st.color,color:"white",border:"none",borderRadius:"14px",padding:"15px",fontSize:"15px",fontWeight:800},onClick:async()=>{
+    if(!f.title.trim()) return;
+    const d=sd(st.id);
+    const item={...f,id:Date.now().toString(),ratings:{}};
+    await persist({...S.store,[st.id]:{...sd(st.id),custom:[...d.custom,item]}});
+    S.manualForm={title:"",description:"",babyTip:"",directions:"",duration:"",category:"natur",budget:0};
+    S.subView=null; showToast("✅ Gespeichert!"); render();
+  }},"💾 Speichern"));
+  wrap.appendChild(content);
+  return wrap;
+}
+
+// ── Hotel View ────────────────────────────────────────────
+function renderHotelPlanner(){
+  const st=STATIONS.find(x=>x.id===S.stationId);
+  const f=S.hotelForm;
+  const wrap=el("div",{cls:"slide-in"});
+  const tb=el("div",{cls:"topbar"});
+  const back=el("button",{cls:"back-btn",onClick:()=>{S.subView=null;render();}});
+  back.innerHTML=`<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="15 18 9 12 15 6"/></svg> Zurück`;
+  tb.appendChild(back);
+  tb.innerHTML+=`<div style="font-family:'Fraunces',serif;font-size:22px;font-weight:700">🏨 Hotel planen</div><div style="font-size:13px;color:var(--text3)">${st.name}</div>`;
+  wrap.appendChild(tb);
+  const content=el("div",{style:{padding:"16px 16px 80px"}});
+
+  if(st.hotel?.suggestions?.length){
+    content.appendChild(el("div",{cls:"sec-lbl"},"Empfehlungen"));
+    const grid=el("div",{style:{display:"grid",gridTemplateColumns:"1fr 1fr",gap:"8px",marginBottom:"16px"}});
+    st.hotel.suggestions.forEach(name=>{
+      const b=el("button",{
+        style:{padding:"12px",borderRadius:"12px",border:`1.5px solid ${S.hotelForm.name===name?st.color:"var(--border)"}`,background:S.hotelForm.name===name?st.tint:"white",fontSize:"13px",fontWeight:600,color:"var(--text)",textAlign:"left",cursor:"pointer"},
+        onClick:()=>{S.hotelForm.name=name;render();}
+      },`🏨 ${name}`);
+      grid.appendChild(b);
+    });
+    content.appendChild(grid);
+  }
+
+  const lbl=t=>el("div",{style:{fontSize:"11px",fontWeight:700,textTransform:"uppercase",letterSpacing:"0.5px",color:"var(--text3)",margin:"14px 0 5px"}},t);
+  content.appendChild(lbl("Hotel-Name *"));
+  const nameInp=el("input",{placeholder:"z.B. Hotel Alfonso XIII"});
+  nameInp.value=f.name||""; nameInp.addEventListener("input",e=>S.hotelForm.name=e.target.value);
+  content.appendChild(nameInp);
+  content.appendChild(lbl("Adresse"));
+  const adrInp=el("input",{placeholder:"z.B. Calle San Fernando, Sevilla"});
+  adrInp.value=f.address||""; adrInp.addEventListener("input",e=>S.hotelForm.address=e.target.value);
+  content.appendChild(adrInp);
+  content.appendChild(lbl("Notizen"));
+  const noteInp=el("textarea",{placeholder:"z.B. Frühstück inklusive, Babybett bestellt"});
+  noteInp.value=f.note||""; noteInp.addEventListener("input",e=>S.hotelForm.note=e.target.value);
+  content.appendChild(noteInp);
+
+  content.appendChild(el("button",{style:{width:"100%",background:st.color,color:"white",border:"none",borderRadius:"14px",padding:"15px",fontSize:"15px",fontWeight:800,marginTop:"16px"},onClick:()=>saveHotel(st.id)},"🏨 Hotel speichern"));
+  wrap.appendChild(content);
+  return wrap;
+}
+
+// ── Map ───────────────────────────────────────────────────
+function renderMap(){
+  const st=STATIONS.find(x=>x.id===S.stationId);
+  const wrap=el("div",{cls:"slide-in"});
+  const tb=el("div",{cls:"topbar"});
+  const back=el("button",{cls:"back-btn",onClick:()=>{S.subView=null;render();}});
+  back.innerHTML=`<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="15 18 9 12 15 6"/></svg> Zurück`;
+  tb.appendChild(back);
+  tb.innerHTML+=`<div style="font-family:'Fraunces',serif;font-size:22px;font-weight:700">🗺 ${st.name}</div>`;
+  wrap.appendChild(tb);
+  const mapDiv=el("div",{style:{margin:"12px 16px",height:"calc(100vh - 180px)",borderRadius:"16px",overflow:"hidden",border:"1px solid var(--border)"}});
+  wrap.appendChild(mapDiv);
+  setTimeout(()=>{
+    const L=window.L; if(!L) return;
+    const map=L.map(mapDiv).setView([st.lat,st.lng],11);
+    L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",{attribution:"© OSM",maxZoom:18}).addTo(map);
+    allItems(st.id).forEach(act=>{
+      if(!act.lat) return;
+      const ci=CATS[act.category]||CATS.natur;
+      L.circleMarker([act.lat,act.lng],{radius:9,fillColor:st.color,color:"white",weight:2,fillOpacity:0.9}).addTo(map)
+        .bindPopup(`<b>${act.title}</b><br>${ci.emoji} ${ci.label}${act.plannedDay?"<br>📅 "+fmtDate(act.plannedDay):""}`);
+    });
+  },50);
+  return wrap;
+}
+
+// ── Calendar ──────────────────────────────────────────────
+function renderCalendar(){
+  const wrap=el("div",{cls:"fade-up"});
+  const tb=el("div",{cls:"topbar"});
+  const topRow=el("div",{style:{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:"6px"}});
+  const burger=el("button",{style:{background:"var(--bg2)",border:"none",borderRadius:"12px",padding:"9px 11px",display:"flex",flexDirection:"column",gap:"4px"},onClick:openMenu});
+  for(let i=0;i<3;i++) burger.appendChild(el("div",{style:{width:"18px",height:"2px",background:"var(--text2)",borderRadius:"2px"}}));
+  topRow.appendChild(burger);
+  tb.appendChild(topRow);
+  tb.innerHTML+=`<div style="font-family:'Fraunces',serif;font-size:26px;font-weight:700">📅 Kalender</div><div style="font-size:13px;color:var(--text3);margin-top:2px">Alle geplanten Tage</div>`;
+  wrap.appendChild(tb);
+
+  const content=el("div",{style:{padding:"16px 16px 80px"}});
+  const byDate={};
+  STATIONS.forEach(st=>{ allItems(st.id).forEach(a=>{ if(!a.plannedDay) return; if(!byDate[a.plannedDay]) byDate[a.plannedDay]=[]; byDate[a.plannedDay].push({...a,st}); }); });
+  const dates=Object.keys(byDate).sort();
+  if(!dates.length){ content.appendChild(el("div",{style:{textAlign:"center",padding:"60px 20px",color:"var(--text3)",fontSize:"14px"}},"\nNoch nichts geplant.\nÖffne eine Station und tippe auf \"Planen\".")); }
+  let lastMonth="";
+  dates.forEach(date=>{
+    const d=new Date(date+"T12:00:00Z");
+    const month=d.toLocaleString("de",{month:"long",year:"numeric",timeZone:"UTC"});
+    if(month!==lastMonth){ lastMonth=month; content.appendChild(el("div",{cls:"sec-lbl"},month)); }
+    const card=el("div",{cls:"card",style:{padding:"14px",marginBottom:"10px"}});
+    const drow=el("div",{style:{display:"flex",gap:"12px",alignItems:"center",marginBottom:"10px"}});
+    const dc=el("div",{style:{width:"44px",height:"44px",borderRadius:"12px",background:"var(--bg2)",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",flexShrink:0}});
+    dc.innerHTML=`<span style="font-size:17px;font-weight:900;line-height:1">${d.getUTCDate()}</span><span style="font-size:9px;color:var(--text3);font-weight:600">${WDAYS[d.getUTCDay()]}</span>`;
+    const dmeta=el("div");
+    const budget=byDate[date].reduce((s,a)=>s+(Number(a.budget)||0),0);
+    dmeta.innerHTML=`<div style="font-size:14px;font-weight:800">${byDate[date].length} Aktivität${byDate[date].length>1?"en":""}</div>${budget>0?`<div style="font-size:11px;color:var(--text3)">💶 ${budget}€ geplant</div>`:""}`;
+    drow.appendChild(dc); drow.appendChild(dmeta);
+
+    // Summary button
+    const stId=byDate[date][0]?.st?.id;
+    const hasSummary=stId&&sd(stId).summaries?.[date];
+    const sumBtn=el("button",{
+      style:{marginLeft:"auto",padding:"6px 12px",borderRadius:"20px",border:"1.5px solid "+(hasSummary?"#4A9B7F":"#D4A84340"),background:hasSummary?"#E8F5F0":"#FFF9E6",fontSize:"11px",fontWeight:700,color:hasSummary?"#4A9B7F":"#8A6A00"},
+      onClick:()=>{S.tab="diary";S.summaryDate=date;S.summaryStation=stId;render();}
+    },hasSummary?"📖 Lesen":"✍️ Schreiben");
+    drow.appendChild(sumBtn);
+    card.appendChild(drow);
+
+    byDate[date].forEach(act=>{
+      const ci=CATS[act.category]||CATS.natur;
+      const r=el("div",{style:{display:"flex",alignItems:"center",gap:"10px",padding:"8px 0",borderTop:"1px solid var(--bg3)"}});
+      r.innerHTML=`<div style="width:8px;height:8px;border-radius:50%;background:${act.st.color};flex-shrink:0"></div><div style="flex:1;min-width:0"><div style="font-size:13px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${act.title}</div><div style="font-size:11px;color:var(--text3)">${ci.emoji} ${act.st.name}</div></div><div style="display:flex;gap:2px">${act.ratings?.thilo?'🧡':''}${act.ratings?.jessi?'💙':''}</div>`;
+      card.appendChild(r);
+    });
+    content.appendChild(card);
+  });
+  wrap.appendChild(content);
+  return wrap;
+}
+
+// ── Match ─────────────────────────────────────────────────
+function renderMatch(){
+  const wrap=el("div",{cls:"fade-up"});
+  const tb=el("div",{cls:"topbar"});
+  const topRow=el("div",{style:{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:"6px"}});
+  const burger=el("button",{style:{background:"var(--bg2)",border:"none",borderRadius:"12px",padding:"9px 11px",display:"flex",flexDirection:"column",gap:"4px"},onClick:openMenu});
+  for(let i=0;i<3;i++) burger.appendChild(el("div",{style:{width:"18px",height:"2px",background:"var(--text2)",borderRadius:"2px"}}));
+  topRow.appendChild(burger); tb.appendChild(topRow);
+  tb.innerHTML+=`<div style="font-family:'Fraunces',serif;font-size:26px;font-weight:700">❤️ Matches</div><div style="font-size:13px;color:var(--text3)">Was euch beide begeistert</div>`;
+  wrap.appendChild(tb);
+  const content=el("div",{style:{padding:"16px 16px 80px"}});
+  let total=0;
+  STATIONS.forEach(st=>{
+    const matches=allItems(st.id).filter(a=>a.ratings?.thilo&&a.ratings?.jessi);
+    if(!matches.length) return; total+=matches.length;
+    content.appendChild(el("div",{cls:"sec-lbl"},`${st.emoji} ${st.name}`));
+    matches.forEach(act=>content.appendChild(renderCard(act,st,false)));
+  });
+  if(!total){
+    const e=el("div",{style:{textAlign:"center",padding:"60px 20px",lineHeight:"1.8"}});
+    e.innerHTML=`<div style="font-size:48px;margin-bottom:16px">❤️</div><div style="font-family:'Fraunces',serif;font-size:20px;font-weight:700;margin-bottom:8px">Noch keine Matches</div><div style="font-size:14px;color:var(--text3)">Bewertet Aktivitäten in den<br>Stationen und findet euren Match.</div>`;
+    content.appendChild(e);
+  }
+  wrap.appendChild(content);
+  return wrap;
+}
+
+// ── Diary ─────────────────────────────────────────────────
+function renderDiary(){
+  const wrap=el("div",{cls:"fade-up"});
+  const tb=el("div",{cls:"topbar"});
+  const topRow=el("div",{style:{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:"6px"}});
+  const burger=el("button",{style:{background:"var(--bg2)",border:"none",borderRadius:"12px",padding:"9px 11px",display:"flex",flexDirection:"column",gap:"4px"},onClick:openMenu});
+  for(let i=0;i<3;i++) burger.appendChild(el("div",{style:{width:"18px",height:"2px",background:"var(--text2)",borderRadius:"2px"}}));
+  topRow.appendChild(burger); tb.appendChild(topRow);
+  tb.innerHTML+=`<div style="font-family:'Fraunces',serif;font-size:26px;font-weight:700">📖 Reisetagebuch</div><div style="font-size:13px;color:var(--text3)">Für Oma & Opa</div>`;
+  wrap.appendChild(tb);
+  const content=el("div",{style:{padding:"16px 16px 80px"}});
+
+  // Active editor
+  if(S.summaryDate&&S.summaryStation){
+    const st=STATIONS.find(x=>x.id===S.summaryStation);
+    const items=allItems(S.summaryStation).filter(a=>a.plannedDay===S.summaryDate);
+    const existing=sd(S.summaryStation).summaries?.[S.summaryDate];
+
+    const editor=el("div",{cls:"card",style:{padding:"16px",marginBottom:"16px"}});
+    const eheader=el("div",{style:{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:"12px"}});
+    eheader.innerHTML=`<div><div style="font-family:'Fraunces',serif;font-size:18px;font-weight:700">${st.emoji} ${fmtDate(S.summaryDate)}</div><div style="font-size:12px;color:var(--text3)">${st.name}</div></div>`;
+    const closeBtn=el("button",{style:{background:"var(--bg2)",border:"none",borderRadius:"20px",padding:"6px 12px",fontSize:"13px",fontWeight:600,color:"var(--text2)"},onClick:()=>{S.summaryDate=null;S.summaryStation=null;S.summaryText="";S.summaryNotes="";render();}},"✕ Schließen");
+    eheader.appendChild(closeBtn); editor.appendChild(eheader);
+
+    // Planned items today
+    if(items.length>0){
+      editor.appendChild(el("div",{style:{fontSize:"12px",fontWeight:700,color:"var(--text3)",marginBottom:"6px",textTransform:"uppercase",letterSpacing:"0.5px"}},"Aktivitäten des Tages"));
+      const ilist=el("div",{style:{background:"var(--bg2)",borderRadius:"10px",padding:"8px 12px",marginBottom:"12px"}});
+      items.forEach(a=>{ const r=el("div",{style:{fontSize:"13px",padding:"3px 0",color:"var(--text2)"}}); r.textContent=`• ${a.title}`; ilist.appendChild(r); });
+      editor.appendChild(ilist);
+    }
+
+    editor.appendChild(el("div",{style:{fontSize:"12px",fontWeight:700,color:"var(--text3)",marginBottom:"6px",textTransform:"uppercase",letterSpacing:"0.5px"}},"Eigene Notizen (Stichpunkte)"));
+    const notesInp=el("textarea",{placeholder:"z.B. Cara hat zum ersten Mal Sand gegessen 😂, super Wetter, bestes Essen ever...",style:{minHeight:"80px",marginBottom:"12px"}});
+    notesInp.value=S.summaryNotes||""; notesInp.addEventListener("input",e=>S.summaryNotes=e.target.value);
+    editor.appendChild(notesInp);
+
+    if(!S.summaryText&&!S.summaryBusy){
+      const genBtn=el("button",{
+        style:{width:"100%",background:"linear-gradient(135deg,#2C4A3E,#4A9B7F)",color:"white",border:"none",borderRadius:"14px",padding:"14px",fontSize:"15px",fontWeight:800,marginBottom:"8px"},
+        onClick:()=>generateSummary(S.summaryStation,S.summaryDate,items,S.summaryNotes)
+      },"✨ KI-Zusammenfassung generieren");
+      editor.appendChild(genBtn);
+    }
+
+    if(S.summaryBusy){
+      const loading=el("div",{style:{textAlign:"center",padding:"20px",color:"var(--text3)"}});
+      loading.innerHTML=`<span class="spin" style="display:inline-block;margin-bottom:8px"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg></span><br>KI schreibt…`;
+      editor.appendChild(loading);
+    }
+
+    if(S.summaryText){
+      const box=el("div",{style:{background:"#F8F9FF",border:"1px solid #E0E4FF",borderRadius:"12px",padding:"16px",marginBottom:"12px"}});
+      const textEl=el("div",{style:{fontSize:"14px",lineHeight:"1.7",color:"var(--text)",fontFamily:"'Fraunces',serif",whiteSpace:"pre-wrap"}});
+      textEl.textContent=S.summaryText; box.appendChild(textEl);
+      editor.appendChild(box);
+
+      const btnRow=el("div",{style:{display:"flex",gap:"8px"}});
+      const saveBtn=el("button",{
+        style:{flex:"1",background:"#4A9B7F",color:"white",border:"none",borderRadius:"12px",padding:"12px",fontSize:"14px",fontWeight:800},
+        onClick:async()=>{await saveSummary(S.summaryStation,S.summaryDate,S.summaryText);S.summaryDate=null;S.summaryStation=null;S.summaryText="";S.summaryNotes="";render();}
+      },"💾 Speichern");
+      const shareBtn=el("button",{
+        style:{flex:"1",background:"#25D366",color:"white",border:"none",borderRadius:"12px",padding:"12px",fontSize:"14px",fontWeight:800},
+        onClick:()=>{
+          const txt=`${st.emoji} Reisetag ${fmtDate(S.summaryDate)}\n\n${S.summaryText}`;
+          window.open(`https://wa.me/?text=${encodeURIComponent(txt)}`, "_blank");
+        }
+      },"📤 WhatsApp teilen");
+      btnRow.appendChild(saveBtn); btnRow.appendChild(shareBtn);
+      editor.appendChild(btnRow);
+
+      const regenBtn=el("button",{
+        style:{width:"100%",background:"var(--bg2)",color:"var(--text2)",border:"none",borderRadius:"12px",padding:"10px",fontSize:"13px",fontWeight:600,marginTop:"6px"},
+        onClick:()=>{S.summaryText="";generateSummary(S.summaryStation,S.summaryDate,items,S.summaryNotes);}
+      },"🔄 Neu generieren");
+      editor.appendChild(regenBtn);
+    }
+
+    if(existing&&!S.summaryText){
+      const existing2=sd(S.summaryStation).summaries[S.summaryDate];
+      const box=el("div",{style:{background:"#F0FBF7",border:"1px solid #C8EDE2",borderRadius:"12px",padding:"14px",marginBottom:"12px"}});
+      box.innerHTML=`<div style="font-size:11px;font-weight:700;color:#4A9B7F;margin-bottom:8px">GESPEICHERTER EINTRAG</div>`;
+      const t=el("div",{style:{fontSize:"14px",lineHeight:"1.7",fontFamily:"'Fraunces',serif",whiteSpace:"pre-wrap"}});
+      t.textContent=existing2.text; box.appendChild(t);
+      editor.appendChild(box);
+      const shareBtn2=el("button",{
+        style:{width:"100%",background:"#25D366",color:"white",border:"none",borderRadius:"12px",padding:"12px",fontSize:"14px",fontWeight:800},
+        onClick:()=>{ const txt=`${st.emoji} Reisetag ${fmtDate(S.summaryDate)}\n\n${existing2.text}`; window.open(`https://wa.me/?text=${encodeURIComponent(txt)}`,"_blank"); }
+      },"📤 An Oma & Opa senden");
+      editor.appendChild(shareBtn2);
+    }
+
+    content.appendChild(editor);
+  }
+
+  // All saved entries
+  const allEntries=[];
+  STATIONS.forEach(st=>{ const sums=sd(st.id).summaries||{}; Object.entries(sums).forEach(([date,sum])=>allEntries.push({...sum,date,st})); });
+  allEntries.sort((a,b)=>a.date<b.date?1:-1);
+
+  if(allEntries.length>0){
+    content.appendChild(el("div",{cls:"sec-lbl"},"Gespeicherte Einträge"));
+    allEntries.forEach(({text,date,st,createdAt})=>{
+      const card2=el("div",{cls:"card",style:{padding:"16px",marginBottom:"10px",cursor:"pointer"},onClick:()=>{S.summaryDate=date;S.summaryStation=st.id;S.summaryText="";S.summaryNotes="";render();}});
+      card2.innerHTML=`<div style="display:flex;align-items:center;gap:8px;margin-bottom:8px"><div style="width:36px;height:36px;border-radius:10px;background:${st.tint};display:flex;align-items:center;justify-content:center;font-size:18px">${st.emoji}</div><div><div style="font-size:14px;font-weight:800">${fmtDate(date)}</div><div style="font-size:11px;color:var(--text3)">${st.name}</div></div></div>`;
+      const preview=el("div",{style:{fontSize:"13px",color:"var(--text2)",fontFamily:"'Fraunces',serif",lineHeight:1.6,display:"-webkit-box","-webkit-line-clamp":"3","-webkit-box-orient":"vertical",overflow:"hidden"}});
+      preview.textContent=text; card2.appendChild(preview);
+      const shareRow=el("div",{style:{marginTop:"10px",display:"flex",gap:"8px"}});
+      shareRow.appendChild(el("button",{
+        style:{background:"#25D366",color:"white",border:"none",borderRadius:"10px",padding:"7px 14px",fontSize:"12px",fontWeight:700},
+        onClick:e=>{e.stopPropagation();const t=`${st.emoji} Reisetag ${fmtDate(date)}\n\n${text}`;window.open(`https://wa.me/?text=${encodeURIComponent(t)}`,"_blank");}
+      },"📤 WhatsApp"));
+      card2.appendChild(shareRow);
+      content.appendChild(card2);
+    });
+  } else if(!S.summaryDate) {
+    const empty=el("div",{style:{textAlign:"center",padding:"40px 20px",color:"var(--text3)"}});
+    empty.innerHTML=`<div style="font-size:40px;margin-bottom:12px">📖</div><div style="font-size:15px;font-weight:700;margin-bottom:6px">Noch keine Einträge</div><div style="font-size:13px">Schreib deinen ersten Tagesbericht!<br>Tippe auf ✍️ auf der Startseite.</div>`;
+    content.appendChild(empty);
+  }
+
+  wrap.appendChild(content);
+  return wrap;
+}
+
+// ── Nav ───────────────────────────────────────────────────
+function renderNav(){
+  const nav=document.getElementById("bottom-nav");
+  nav.style.display="flex"; nav.innerHTML="";
+  const tabs=[
+    {id:"home",label:"Reise",icon:`<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9.5L12 3l9 6.5V20a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V9.5z"/></svg>`},
+    {id:"calendar",label:"Kalender",icon:`<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>`},
+    {id:"match",label:"Matches",icon:`<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>`},
+    {id:"diary",label:"Tagebuch",icon:`<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-6-6z"/></svg>`},
+  ];
+  const st=S.stationId?STATIONS.find(x=>x.id===S.stationId):null;
+  const accentColor=st?.color||"#4A9B7F";
+
+  tabs.forEach(t=>{
+    const active=!S.stationId&&S.tab===t.id;
+    const btn=el("button",{
+      cls:`nav-btn${active?" active":""}`,
+      style:{position:"relative"},
+      onClick:()=>{S.tab=t.id;S.stationId=null;S.subView=null;render();}
+    });
+    btn.style.setProperty("--accent",accentColor);
+    btn.innerHTML=t.icon; btn.appendChild(document.createTextNode(t.label));
+
+    if(t.id==="match"){
+      const n=STATIONS.reduce((s,st2)=>s+allItems(st2.id).filter(a=>a.ratings?.thilo&&a.ratings?.jessi).length,0);
+      if(n>0){ const dot=el("div",{style:{position:"absolute",top:"8px",right:"calc(50% - 14px)",width:"16px",height:"16px",borderRadius:"50%",background:"#E8845A",fontSize:"10px",fontWeight:800,color:"white",display:"flex",alignItems:"center",justifyContent:"center"}}); dot.textContent=n; btn.appendChild(dot); }
+    }
+    nav.appendChild(btn);
+  });
+}
+
+// ── Main Render ───────────────────────────────────────────
+function render(){
+  const vc=document.getElementById("view-container");
+  vc.innerHTML="";
+  let view;
+
+  if(S.stationId){
+    renderNav();
+    switch(S.subView){
+      case "dayPicker":  view=renderDayPicker(); break;
+      case "add":        view=renderAdd(); break;
+      case "addManual":  view=renderAddManual(); break;
+      case "map":        view=renderMap(); break;
+      case "hotel":      view=renderHotelPlanner(); break;
+      default:           view=renderStation();
+    }
+  } else {
+    renderNav();
+    switch(S.tab){
+      case "home":     view=renderHome(); break;
+      case "calendar": view=renderCalendar(); break;
+      case "match":    view=renderMatch(); break;
+      case "diary":    view=renderDiary(); break;
+      default:         view=renderHome();
+    }
+  }
+  vc.appendChild(view);
+}
+
+// ── Boot ──────────────────────────────────────────────────
+startSync();
+fetchWeather();
+if("serviceWorker" in navigator) navigator.serviceWorker.register("./sw.js").catch(()=>{});
+</script>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+</body>
+</html>
