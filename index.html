@@ -225,6 +225,228 @@
       animation:shimmer 1.5s infinite;
       border-radius:8px;
     }
+
+    /* ══════════════════════════════════════
+       NEW FEATURES: Budget, Energie, Push
+       ══════════════════════════════════════ */
+
+    /* ── Countdown Banner ── */
+    .countdown-banner {
+      display:flex; align-items:center; gap:10px;
+      background:linear-gradient(135deg,#2C4A3E,#1A3028);
+      padding:10px 16px;
+      border-radius:14px;
+      margin:12px 16px 0;
+    }
+    .countdown-days {
+      font-family:'Fraunces',serif;
+      font-size:38px; font-weight:700;
+      color:#7ECFB0; line-height:1;
+    }
+    .countdown-label { font-size:12px; color:rgba(255,255,255,0.6); margin-top:2px; }
+    .countdown-sub   { font-size:13px; color:rgba(255,255,255,0.5); font-style:italic; font-family:'Fraunces',serif; }
+
+    /* ── Budget ── */
+    .budget-ring-wrap {
+      display:flex; flex-direction:column; align-items:center;
+      padding:20px 16px 16px;
+    }
+    .budget-ring-svg { overflow:visible; }
+    .budget-total-label { font-size:12px; color:var(--text3); margin-top:12px; text-align:center; }
+    .budget-total-amount { font-family:'Fraunces',serif; font-size:32px; font-weight:700; text-align:center; }
+    .budget-split-row {
+      display:grid; grid-template-columns:1fr 1fr;
+      gap:10px; padding:0 16px 16px;
+    }
+    .budget-split-box {
+      background:var(--bg2); border-radius:14px;
+      padding:14px; border:1px solid var(--border);
+    }
+    .budget-split-lbl { font-size:11px; color:var(--text3); font-weight:700; text-transform:uppercase; letter-spacing:0.5px; margin-bottom:4px; }
+    .budget-split-val { font-family:'Fraunces',serif; font-size:22px; font-weight:700; }
+    .budget-split-val.over { color:#E8845A; }
+    .budget-split-val.ok   { color:#4A9B7F; }
+
+    .budget-station-row {
+      background:var(--card); border-radius:14px;
+      margin:0 16px 10px; overflow:hidden;
+      border:1px solid var(--border); box-shadow:var(--shadow);
+    }
+    .bsr-top {
+      display:flex; align-items:center; gap:10px;
+      padding:13px 14px; cursor:pointer;
+    }
+    .bsr-dot { width:10px; height:10px; border-radius:50%; flex-shrink:0; }
+    .bsr-name { font-weight:700; font-size:14px; flex:1; }
+    .bsr-right { text-align:right; }
+    .bsr-spent { font-size:15px; font-weight:800; }
+    .bsr-of    { font-size:11px; color:var(--text3); margin-top:1px; }
+    .bsr-bar   { height:3px; background:var(--bg3); }
+    .bsr-bar-fill { height:100%; transition:width .5s cubic-bezier(.16,1,.3,1); }
+    .bsr-items { padding:0 14px 12px; display:none; }
+    .bsr-items.open { display:block; }
+    .bsr-item {
+      display:flex; justify-content:space-between; align-items:center;
+      padding:8px 0; border-bottom:1px solid var(--bg3); font-size:13px;
+    }
+    .bsr-item:last-child { border:none; }
+    .bsr-item-cat { font-size:11px; color:var(--text3); margin-top:1px; }
+
+    .add-expense-row {
+      margin:0 16px 24px;
+      background:var(--bg2); border:1.5px dashed var(--border);
+      border-radius:14px; padding:14px 16px;
+      display:flex; align-items:center; gap:10px;
+      cursor:pointer; color:var(--text2); font-size:14px; font-weight:600;
+      transition:background .15s, border-color .15s;
+    }
+    .add-expense-row:active { background:var(--bg3); }
+
+    /* ── Energie / Day Planner ── */
+    .ep-date-nav {
+      display:flex; align-items:center; justify-content:space-between;
+      padding:14px 16px;
+      background:var(--card); border-bottom:1px solid var(--border);
+      position:sticky; top:0; z-index:10;
+    }
+    .ep-nav-btn {
+      width:36px; height:36px; border-radius:50%;
+      background:var(--bg2); border:1px solid var(--border);
+      font-size:18px; color:var(--text2);
+      display:flex; align-items:center; justify-content:center;
+    }
+    .ep-date-info { text-align:center; }
+    .ep-date-main  { font-family:'Fraunces',serif; font-size:18px; font-weight:700; }
+    .ep-date-station { font-size:12px; color:var(--text3); margin-top:2px; }
+
+    .ep-baby-bar {
+      margin:10px 16px 0;
+      background:#FFF9E6; border:1.5px solid #F0D08060;
+      border-radius:12px; padding:10px 14px;
+      display:flex; align-items:center; gap:10px;
+      font-size:13px; color:#8A6A00; font-weight:600;
+    }
+
+    .ep-slot {
+      margin:10px 16px 0;
+      background:var(--card); border-radius:16px;
+      border:1px solid var(--border); box-shadow:var(--shadow);
+      overflow:hidden;
+    }
+    .ep-slot-header {
+      display:flex; align-items:center; gap:12px;
+      padding:13px 14px;
+      border-bottom:1px solid var(--bg3);
+    }
+    .ep-slot-icon { font-size:22px; }
+    .ep-slot-title { font-size:14px; font-weight:800; }
+    .ep-slot-time  { font-size:12px; color:var(--text3); margin-top:1px; }
+    .ep-energy-dots { display:flex; gap:4px; margin-left:auto; }
+    .ep-dot { width:8px; height:8px; border-radius:50%; background:var(--bg3); }
+    .ep-dot.high   { background:#4A9B7F; }
+    .ep-dot.medium { background:#D4A843; }
+    .ep-dot.low    { background:#C8C5BB; }
+
+    .ep-activity {
+      display:flex; align-items:center; gap:10px;
+      padding:10px 14px;
+      border-bottom:1px solid var(--bg3);
+    }
+    .ep-activity:last-child { border:none; }
+    .ep-act-icon { font-size:16px; }
+    .ep-act-name { font-size:13px; font-weight:600; flex:1; }
+    .ep-act-dur  { font-size:11px; color:var(--text3); }
+    .ep-act-baby {
+      font-size:10px; font-weight:700; color:#8A6A00;
+      background:#FFF9E6; border-radius:8px; padding:2px 7px;
+    }
+    .ep-add-btn {
+      display:flex; align-items:center; gap:6px;
+      padding:10px 14px;
+      color:var(--text3); font-size:12px; font-weight:600;
+      cursor:pointer; background:none; border:none; width:100%;
+    }
+
+    /* ── Push Notifications ── */
+    .push-hero {
+      margin:16px; border-radius:20px; overflow:hidden;
+      background:linear-gradient(135deg,#2C4A3E,#1A3028);
+      padding:24px 20px; text-align:center;
+    }
+    .push-hero-icon { font-size:44px; margin-bottom:10px; }
+    .push-hero-title { font-family:'Fraunces',serif; font-size:22px; font-weight:700; color:white; margin-bottom:6px; }
+    .push-hero-sub { font-size:13px; color:rgba(255,255,255,0.6); line-height:1.6; }
+    .push-enable-btn {
+      margin-top:16px; background:#7ECFB0; color:#1A3028;
+      border:none; border-radius:14px; padding:14px 24px;
+      font-size:15px; font-weight:800; cursor:pointer; width:100%;
+      transition:opacity .15s;
+    }
+    .push-enable-btn:disabled { opacity:.5; }
+
+    .notif-item {
+      background:var(--card); border-radius:14px;
+      margin:0 16px 10px; padding:14px 16px;
+      display:flex; align-items:flex-start; gap:12px;
+      border:1px solid var(--border); box-shadow:var(--shadow);
+    }
+    .notif-ico   { font-size:22px; flex-shrink:0; margin-top:1px; }
+    .notif-body  { flex:1; }
+    .notif-title { font-size:14px; font-weight:800; }
+    .notif-desc  { font-size:12px; color:var(--text2); margin-top:3px; line-height:1.5; }
+    .notif-toggle {
+      width:44px; height:26px; border-radius:13px;
+      background:var(--bg3); border:1px solid var(--border);
+      position:relative; cursor:pointer; flex-shrink:0;
+      transition:background .2s;
+    }
+    .notif-toggle.on { background:#4A9B7F; border-color:#4A9B7F; }
+    .notif-toggle::after {
+      content:''; position:absolute;
+      width:20px; height:20px; background:white;
+      border-radius:50%; top:2px; left:2px;
+      transition:transform .2s; box-shadow:0 1px 4px rgba(0,0,0,.2);
+    }
+    .notif-toggle.on::after { transform:translateX(18px); }
+
+    /* ── Bottom sheet modal ── */
+    #bsheet-backdrop {
+      position:fixed; inset:0; background:rgba(0,0,0,.4);
+      backdrop-filter:blur(6px); z-index:300;
+      display:none; align-items:flex-end;
+    }
+    #bsheet-backdrop.open { display:flex; }
+    .bsheet {
+      width:100%; background:var(--card);
+      border-radius:24px 24px 0 0;
+      padding:0 20px calc(20px + var(--safe-bot));
+      animation:slideUp .35s cubic-bezier(.16,1,.3,1) both;
+      max-height:90vh; overflow-y:auto;
+    }
+    .bsheet::-webkit-scrollbar { display:none; }
+    .bsheet-handle {
+      width:36px; height:4px; background:var(--bg3);
+      border-radius:2px; margin:12px auto 20px;
+    }
+    .bsheet-title {
+      font-family:'Fraunces',serif; font-size:20px; font-weight:700;
+      margin-bottom:16px;
+    }
+    .bsheet-field { margin-bottom:14px; }
+    .bsheet-label {
+      font-size:11px; font-weight:700; text-transform:uppercase;
+      letter-spacing:.5px; color:var(--text3); margin-bottom:5px; display:block;
+    }
+    .bsheet-actions { display:flex; gap:10px; margin-top:8px; }
+    .bsheet-cancel {
+      flex:1; background:var(--bg2); border:1px solid var(--border);
+      border-radius:14px; padding:14px; font-size:15px; font-weight:600;
+      color:var(--text2); cursor:pointer;
+    }
+    .bsheet-submit {
+      flex:2; border:none; border-radius:14px; padding:14px;
+      font-size:15px; font-weight:800; color:white; cursor:pointer;
+    }
   </style>
 </head>
 <body>
@@ -233,6 +455,9 @@
   <nav class="bottom-nav" id="bottom-nav" style="display:none"></nav>
 </div>
 <div id="toast"></div>
+<div id="bsheet-backdrop" onclick="closeBSheet(event)">
+  <div class="bsheet" id="bsheet-content"></div>
+</div>
 <div id="menu-overlay">
   <div id="menu-backdrop" onclick="closeMenu()"></div>
   <div id="menu-panel" id="menu-panel"></div>
@@ -627,13 +852,19 @@ function renderHome(){
   const sub=el("div",{style:{fontSize:"14px",color:"rgba(255,255,255,0.6)",fontFamily:"'Fraunces',serif",fontStyle:"italic"}});
   sub.textContent="7. März – 10. April 2026";
 
+  // Countdown
+  const daysLeft=getDaysUntilTrip();
+  const ctBanner=el("div",{cls:"countdown-banner"});
+  ctBanner.innerHTML=`<div><div class="countdown-days">${daysLeft>0?daysLeft:'✈️'}</div><div class="countdown-label">${daysLeft>0?'Tage bis zum Abflug':'Reise läuft!'}</div></div>
+    <div style="flex:1;text-align:right"><div class="countdown-sub">7. März 2026</div><div style="font-size:11px;color:rgba(255,255,255,0.4);margin-top:2px">Lisboa ✈</div></div>`;
+
   // Progress pill
   let totalAll=0,plannedAll=0;
   STATIONS.forEach(st=>{const items=allItems(st.id);totalAll+=items.length;plannedAll+=items.filter(a=>a.plannedDay).length;});
   const prog=el("div",{style:{marginTop:"20px",background:"rgba(255,255,255,0.1)",borderRadius:"20px",padding:"12px 16px"}});
   prog.innerHTML=`<div style="display:flex;justify-content:space-between;margin-bottom:8px"><span style="font-size:12px;color:rgba(255,255,255,0.7);font-weight:600">${plannedAll} von ${totalAll} Aktivitäten geplant</span><span style="font-size:12px;color:rgba(255,255,255,0.5)">${totalAll?Math.round(plannedAll/totalAll*100):0}%</span></div><div style="height:4px;background:rgba(255,255,255,0.15);border-radius:2px;overflow:hidden"><div style="height:100%;width:${totalAll?Math.round(plannedAll/totalAll*100):0}%;background:linear-gradient(90deg,#7ECFB0,#4A9B7F);border-radius:2px;transition:width 0.6s"></div></div>`;
 
-  hero.appendChild(topRow); hero.appendChild(title); hero.appendChild(sub); hero.appendChild(prog);
+  hero.appendChild(topRow); hero.appendChild(title); hero.appendChild(sub); hero.appendChild(ctBanner); hero.appendChild(prog);
   wrap.appendChild(hero);
 
   // Firebase error banner
@@ -710,14 +941,21 @@ function renderHome(){
     // Bottom
     const bot=el("div",{style:{padding:"10px 16px",display:"flex",justifyContent:"space-between",alignItems:"center"}});
     const botLeft=el("div");
+    const stBudget=BUDGETS[st.id]||0;
+    const stSpentLocal=EXPENSES.filter(e=>e.station===st.id).reduce((s,e)=>s+e.amount,0);
+    const budgetPct=stBudget?Math.round(stSpentLocal/stBudget*100):0;
     botLeft.innerHTML=`<div style="font-size:12px;color:var(--text3)">📅 ${st.dates}</div>`;
     if(hotel?.confirmed&&hotel.name&&hotel.name!=="Auf dem Schiff"){
       botLeft.innerHTML+=`<div style="font-size:11px;color:${st.color};font-weight:600;margin-top:2px">🏨 ${hotel.name}</div>`;
     } else if(!hotel?.confirmed){
       botLeft.innerHTML+=`<div style="font-size:11px;color:#E8845A;font-weight:600;margin-top:2px">🏨 Hotel noch offen</div>`;
     }
+    const botRight=el("div",{style:{textAlign:"right"}});
+    botRight.innerHTML=`<div style="font-size:11px;color:var(--text3)">💶 ${stSpentLocal}€ / ${stBudget}€</div>
+      <div style="margin-top:4px;height:3px;width:70px;background:var(--bg3);border-radius:2px;overflow:hidden;margin-left:auto">
+        <div style="height:100%;width:${budgetPct}%;background:${st.color};border-radius:2px;transition:width .5s"></div></div>`;
     bot.appendChild(botLeft);
-    bot.appendChild(el("span",{style:{color:"var(--text3)",fontSize:"22px",fontWeight:300}},"›"));
+    bot.appendChild(botRight);
     card.appendChild(bot);
     list.appendChild(card);
   });
@@ -1412,6 +1650,9 @@ function renderNav(){
     {id:"calendar",label:"Kalender",icon:`<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>`},
     {id:"match",label:"Matches",icon:`<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>`},
     {id:"diary",label:"Tagebuch",icon:`<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-6-6z"/></svg>`},
+    {id:"budget",label:"Budget",icon:`<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>`},
+    {id:"energie",label:"Energie",icon:`<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>`},
+    {id:"push",label:"Alerts",icon:`<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>`},
   ];
   const st=S.stationId?STATIONS.find(x=>x.id===S.stationId):null;
   const accentColor=st?.color||"#4A9B7F";
@@ -1457,11 +1698,355 @@ function render(){
       case "calendar": view=renderCalendar(); break;
       case "match":    view=renderMatch(); break;
       case "diary":    view=renderDiary(); break;
+      case "budget":   view=renderBudget(); break;
+      case "energie":  view=renderEnergiePlanner(); break;
+      case "push":     view=renderNotifications(); break;
       default:         view=renderHome();
     }
   }
   vc.appendChild(view);
 }
+
+// ══════════════════════════════════════════════════════════
+//  NEUE FEATURES
+// ══════════════════════════════════════════════════════════
+
+// ── Countdown helper ──────────────────────────────────────
+function getDaysUntilTrip(){
+  const now=new Date(); now.setHours(0,0,0,0);
+  const start=new Date('2026-03-07'); start.setHours(0,0,0,0);
+  return Math.ceil((start-now)/86400000);
+}
+
+// ── Budget data ───────────────────────────────────────────
+let EXPENSES = JSON.parse(localStorage.getItem('rp_expenses')||'[]');
+// Pre-seed some demo data if empty
+if(!EXPENSES.length){
+  EXPENSES=[
+    {station:'algarve',    label:'Flug Lissabon (Hin)',  amount:189, cat:'Transport', id:'e1'},
+    {station:'algarve',    label:'Hotel Anzahlung',       amount:80,  cat:'Unterkunft',id:'e2'},
+    {station:'sevilla',    label:'Hotel Sevilla 2N',      amount:140, cat:'Unterkunft',id:'e3'},
+    {station:'sevilla',    label:'Tapas & Drinks',        amount:38,  cat:'Essen',     id:'e4'},
+    {station:'teneriffa',  label:'Flug Teneriffa',        amount:80,  cat:'Transport', id:'e5'},
+    {station:'kreuzfahrt', label:'MSC Kreuzfahrt Anzahlung',amount:350,cat:'Unterkunft',id:'e6'},
+  ];
+  localStorage.setItem('rp_expenses',JSON.stringify(EXPENSES));
+}
+
+const BUDGETS={algarve:800,sevilla:350,teneriffa:500,kreuzfahrt:1200,offen:900};
+function saveExpenses(){ localStorage.setItem('rp_expenses',JSON.stringify(EXPENSES)); }
+function getTotalBudget(){ return Object.values(BUDGETS).reduce((a,b)=>a+b,0); }
+function getTotalSpent(){ return EXPENSES.reduce((s,e)=>s+e.amount,0); }
+
+// ── Notification config ───────────────────────────────────
+let NOTIFS = JSON.parse(localStorage.getItem('rp_notifs')||JSON.stringify([
+  {id:'checkin', icon:'🏨', title:'Check-in Erinnerung',   desc:'1 Tag vorher erinnert euch ans Packen & Auschecken',       on:true},
+  {id:'cara',    icon:'🍼', title:'Caras Mittagsschlaf',   desc:'Täglich 11:45 Uhr – Zeit, eine ruhige Ecke zu finden',     on:true},
+  {id:'wetter',  icon:'⛅', title:'Tageswetter-Update',    desc:'Morgens 7:30 Uhr – was zieht ihr heute an?',               on:true},
+  {id:'budget',  icon:'💰', title:'Budget-Alarm',          desc:'Warnung wenn 80% des Stationsbudgets erreicht ist',         on:false},
+  {id:'diary',   icon:'📖', title:'Tagebuch-Reminder',     desc:'Abends 21 Uhr – heute noch einen Tagesbericht schreiben?', on:true},
+  {id:'countdown',icon:'✈️',title:'Countdown-Meilensteine',desc:'30, 14, 7, 3, 1 Tag vor Abflug',                           on:true},
+]));
+function saveNotifs(){ localStorage.setItem('rp_notifs',JSON.stringify(NOTIFS)); }
+
+// ── Energy Planner state ──────────────────────────────────
+let EP_DAY_OFFSET = 0;
+const EP_SLOTS=[
+  {id:'morning',  icon:'🌅', title:'Morgen',       time:'7:00–12:00',  energy:'high',   max:3,
+   acts:[{icon:'☕',name:'Frühstück & Cara-Zeit',   dur:'1 Std',   baby:true},
+         {icon:'🚶',name:'Ausflug / Aktivität',      dur:'2–3 Std', baby:true}]},
+  {id:'midday',   icon:'🍽️', title:'Mittagspause', time:'12:00–14:30', energy:'low',    max:1,
+   acts:[{icon:'🍼',name:'Caras Mittagsschlaf',      dur:'1–2 Std', baby:true},
+         {icon:'🏊',name:'Eltern-Pool / Auszeit',    dur:'45 Min',  baby:false}]},
+  {id:'afternoon',icon:'☀️', title:'Nachmittag',   time:'14:30–19:00', energy:'medium', max:2,
+   acts:[{icon:'🎡',name:'Leichte Aktivität',        dur:'2 Std',   baby:true}]},
+  {id:'evening',  icon:'🌙', title:'Abend',         time:'ab 19:00',    energy:'low',    max:1,
+   acts:[{icon:'🍽️',name:'Abendessen',               dur:'1–2 Std', baby:true},
+         {icon:'💤',name:'Cara Bettzeit',             dur:'ca. 20:00',baby:true}]},
+];
+const STATION_RANGES=[
+  {id:'algarve',    start:'2026-03-08', end:'2026-03-14'},
+  {id:'sevilla',    start:'2026-03-14', end:'2026-03-16'},
+  {id:'teneriffa',  start:'2026-03-16', end:'2026-03-20'},
+  {id:'kreuzfahrt', start:'2026-03-20', end:'2026-03-27'},
+  {id:'offen',      start:'2026-03-27', end:'2026-04-10'},
+];
+function getStationForDate(isoDate){
+  const r=STATION_RANGES.find(r=>isoDate>=r.start&&isoDate<r.end);
+  return r?STATIONS.find(s=>s.id===r.id):null;
+}
+function epGetDate(){
+  const d=new Date('2026-03-07'); d.setDate(d.getDate()+EP_DAY_OFFSET); return d;
+}
+function epDateISO(){
+  const d=epGetDate(); return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+}
+
+// ── Bottom Sheet ──────────────────────────────────────────
+window.closeBSheet=function(e){
+  if(e&&e.target!==document.getElementById('bsheet-backdrop')) return;
+  document.getElementById('bsheet-backdrop').classList.remove('open');
+};
+function openBSheet(html){
+  document.getElementById('bsheet-content').innerHTML=html;
+  document.getElementById('bsheet-backdrop').classList.add('open');
+}
+function hideBSheet(){
+  document.getElementById('bsheet-backdrop').classList.remove('open');
+}
+
+// ── BUDGET VIEW ───────────────────────────────────────────
+function renderBudget(){
+  const wrap=el('div',{cls:'fade-up'});
+  const tb=el('div',{cls:'topbar'});
+  const topRow=el('div',{style:{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:'6px'}});
+  const burger=el('button',{style:{background:'var(--bg2)',border:'none',borderRadius:'12px',padding:'9px 11px',display:'flex',flexDirection:'column',gap:'4px'},onClick:openMenu});
+  for(let i=0;i<3;i++) burger.appendChild(el('div',{style:{width:'18px',height:'2px',background:'var(--text2)',borderRadius:'2px'}}));
+  topRow.appendChild(burger);
+  tb.appendChild(topRow);
+  tb.innerHTML+=`<div style="font-family:'Fraunces',serif;font-size:26px;font-weight:700">💰 Budget</div><div style="font-size:13px;color:var(--text3);margin-top:2px">Ausgaben im Überblick</div>`;
+  wrap.appendChild(tb);
+
+  const total=getTotalBudget(), spent=getTotalSpent(), pct=Math.round(spent/total*100);
+  const r=80, stroke=2*Math.PI*r, dashOffset=stroke*(1-pct/100);
+  const ringColor=pct>90?'#E8845A':pct>70?'#D4A843':'#4A9B7F';
+
+  const ring=el('div',{cls:'budget-ring-wrap'});
+  ring.innerHTML=`
+    <svg class="budget-ring-svg" width="200" height="200" viewBox="0 0 200 200">
+      <circle cx="100" cy="100" r="${r}" fill="none" stroke="var(--bg3)" stroke-width="14"/>
+      <circle cx="100" cy="100" r="${r}" fill="none" stroke="${ringColor}" stroke-width="14"
+        stroke-dasharray="${stroke}" stroke-dashoffset="${dashOffset}"
+        stroke-linecap="round" transform="rotate(-90 100 100)"
+        style="transition:stroke-dashoffset .8s cubic-bezier(.16,1,.3,1)"/>
+      <text x="100" y="92" text-anchor="middle" font-family="Fraunces,serif" font-size="32" font-weight="700" fill="var(--text)">${pct}%</text>
+      <text x="100" y="114" text-anchor="middle" font-size="12" fill="var(--text3)">ausgegeben</text>
+    </svg>`;
+  wrap.appendChild(ring);
+
+  const splitRow=el('div',{cls:'budget-split-row'});
+  [[`${spent.toLocaleString('de-DE')} €`,'Ausgegeben',spent>total?'over':'ok'],
+   [`${(total-spent).toLocaleString('de-DE')} €`,'Noch verfügbar','ok']].forEach(([val,lbl,cls])=>{
+    const box=el('div',{cls:'budget-split-box'});
+    box.innerHTML=`<div class="budget-split-lbl">${lbl}</div><div class="budget-split-val ${cls}">${val}</div>`;
+    splitRow.appendChild(box);
+  });
+  wrap.appendChild(splitRow);
+
+  const slbl=el('div',{cls:'sec-lbl',style:{padding:'0 16px'}}, 'Nach Station');
+  wrap.appendChild(slbl);
+
+  STATIONS.forEach(st=>{
+    const stSpent=EXPENSES.filter(e=>e.station===st.id).reduce((s,e)=>s+e.amount,0);
+    const stBudget=BUDGETS[st.id]||0;
+    const stPct=Math.min(100,Math.round(stSpent/stBudget*100));
+    const over=stSpent>stBudget;
+    const stItems=EXPENSES.filter(e=>e.station===st.id);
+
+    const row=el('div',{cls:'budget-station-row'});
+    const top=el('div',{cls:'bsr-top',onClick:()=>row.querySelector('.bsr-items').classList.toggle('open')});
+    top.innerHTML=`<div class="bsr-dot" style="background:${st.color}"></div>
+      <div class="bsr-name">${st.emoji} ${st.name}</div>
+      <div class="bsr-right">
+        <div class="bsr-spent" style="color:${over?'#E8845A':st.color}">${stSpent.toLocaleString('de-DE')} €</div>
+        <div class="bsr-of">von ${stBudget.toLocaleString('de-DE')} €</div>
+      </div>`;
+    const bar=el('div',{cls:'bsr-bar'});
+    bar.innerHTML=`<div class="bsr-bar-fill" style="width:${stPct}%;background:${over?'#E8845A':st.color}"></div>`;
+    const items=el('div',{cls:'bsr-items'});
+    if(stItems.length){
+      stItems.forEach(exp=>{
+        items.innerHTML+=`<div class="bsr-item">
+          <div><div>${exp.label}</div><div class="bsr-item-cat">${exp.cat}</div></div>
+          <div style="font-weight:700">${exp.amount.toLocaleString('de-DE')} €</div>
+        </div>`;
+      });
+    } else {
+      items.innerHTML=`<div style="font-size:13px;color:var(--text3);padding:8px 0">Noch keine Ausgaben</div>`;
+    }
+    row.appendChild(top); row.appendChild(bar); row.appendChild(items);
+    wrap.appendChild(row);
+  });
+
+  const addRow=el('div',{cls:'add-expense-row',onClick:()=>openAddExpenseSheet()});
+  addRow.innerHTML=`<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg> Ausgabe eintragen`;
+  wrap.appendChild(addRow);
+  return wrap;
+}
+
+function openAddExpenseSheet(){
+  const stOptions=STATIONS.map(s=>`<option value="${s.id}">${s.emoji} ${s.name}</option>`).join('');
+  const catOptions=['Unterkunft','Transport','Essen','Aktivität','Einkauf','Sonstiges'].map(c=>`<option>${c}</option>`).join('');
+  openBSheet(`
+    <div class="bsheet-handle"></div>
+    <div class="bsheet-title">💰 Ausgabe eintragen</div>
+    <div class="bsheet-field">
+      <label class="bsheet-label">Station</label>
+      <select id="bs-station">${stOptions}</select>
+    </div>
+    <div class="bsheet-field">
+      <label class="bsheet-label">Beschreibung</label>
+      <input id="bs-label" placeholder="z.B. Strandrestaurant Mittag" />
+    </div>
+    <div class="bsheet-field">
+      <label class="bsheet-label">Betrag (€)</label>
+      <input id="bs-amount" type="number" placeholder="0" inputmode="decimal" />
+    </div>
+    <div class="bsheet-field">
+      <label class="bsheet-label">Kategorie</label>
+      <select id="bs-cat">${catOptions}</select>
+    </div>
+    <div class="bsheet-actions">
+      <button class="bsheet-cancel" onclick="hideBSheet()">Abbrechen</button>
+      <button class="bsheet-submit" style="background:#4A9B7F" onclick="saveExpenseFromSheet()">Speichern</button>
+    </div>`);
+}
+window.saveExpenseFromSheet=function(){
+  const station=document.getElementById('bs-station').value;
+  const label=document.getElementById('bs-label').value.trim();
+  const amount=parseFloat(document.getElementById('bs-amount').value);
+  const cat=document.getElementById('bs-cat').value;
+  if(!label||!amount) return;
+  EXPENSES.push({station,label,amount,cat,id:Date.now().toString()});
+  saveExpenses(); hideBSheet(); render(); showToast('💰 Ausgabe gespeichert!');
+};
+
+// ── ENERGIE / DAY PLANNER ─────────────────────────────────
+function renderEnergiePlanner(){
+  const wrap=el('div',{cls:'fade-up'});
+  const tb=el('div',{cls:'topbar'});
+  const topRow=el('div',{style:{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:'6px'}});
+  const burger=el('button',{style:{background:'var(--bg2)',border:'none',borderRadius:'12px',padding:'9px 11px',display:'flex',flexDirection:'column',gap:'4px'},onClick:openMenu});
+  for(let i=0;i<3;i++) burger.appendChild(el('div',{style:{width:'18px',height:'2px',background:'var(--text2)',borderRadius:'2px'}}));
+  topRow.appendChild(burger);
+  tb.appendChild(topRow);
+  tb.innerHTML+=`<div style="font-family:'Fraunces',serif;font-size:26px;font-weight:700">⚡ Tagesplanung</div><div style="font-size:13px;color:var(--text3);margin-top:2px">Babypausen clever einteilen</div>`;
+  wrap.appendChild(tb);
+
+  const dateISO=epDateISO();
+  const stForDay=getStationForDate(dateISO);
+  const d=epGetDate();
+  const WDAY=['Sonntag','Montag','Dienstag','Mittwoch','Donnerstag','Freitag','Samstag'];
+  const MON=['Jan','Feb','Mär','Apr','Mai','Jun','Jul','Aug','Sep','Okt','Nov','Dez'];
+
+  const nav=el('div',{cls:'ep-date-nav'});
+  const prevBtn=el('button',{cls:'ep-nav-btn',onClick:()=>{if(EP_DAY_OFFSET>0)EP_DAY_OFFSET--;render();}});
+  prevBtn.innerHTML='‹';
+  const nextBtn=el('button',{cls:'ep-nav-btn',onClick:()=>{if(EP_DAY_OFFSET<34)EP_DAY_OFFSET++;render();}});
+  nextBtn.innerHTML='›';
+  const dateInfo=el('div',{cls:'ep-date-info'});
+  dateInfo.innerHTML=`<div class="ep-date-main">${WDAY[d.getDay()]}, ${d.getDate()}. ${MON[d.getMonth()]}</div>
+    <div class="ep-date-station">${stForDay?stForDay.emoji+' '+stForDay.name+' · '+stForDay.subtitle:'Reisetag '+(EP_DAY_OFFSET+1)}</div>`;
+  nav.appendChild(prevBtn); nav.appendChild(dateInfo); nav.appendChild(nextBtn);
+  wrap.appendChild(nav);
+
+  const babyBar=el('div',{cls:'ep-baby-bar'});
+  babyBar.innerHTML=`<span style="font-size:18px">🍼</span> Caras Mittagsschlaf einplanen: ca. 12:00–14:00 Uhr`;
+  wrap.appendChild(babyBar);
+
+  EP_SLOTS.forEach(slot=>{
+    const slotEl=el('div',{cls:'ep-slot'});
+    const dotHtml=[...Array(3)].map((_,i)=>`<div class="ep-dot ${i<slot.max?slot.energy:''}"></div>`).join('');
+    slotEl.innerHTML=`
+      <div class="ep-slot-header">
+        <div class="ep-slot-icon">${slot.icon}</div>
+        <div><div class="ep-slot-title">${slot.title}</div><div class="ep-slot-time">${slot.time}</div></div>
+        <div class="ep-energy-dots">${dotHtml}</div>
+      </div>`;
+    slot.acts.forEach(act=>{
+      const actEl=el('div',{cls:'ep-activity'});
+      actEl.innerHTML=`<div class="ep-act-icon">${act.icon}</div>
+        <div class="ep-act-name">${act.name}</div>
+        <div class="ep-act-dur">${act.dur}</div>
+        ${act.baby?`<div class="ep-act-baby">🍼</div>`:''}`;
+      slotEl.appendChild(actEl);
+    });
+
+    // Add station activities planned for this day in this slot
+    if(stForDay){
+      const dayActs=allItems(stForDay.id).filter(a=>a.plannedDay===dateISO);
+      if(slot.id==='morning'&&dayActs.length){
+        dayActs.forEach(act=>{
+          const ae=el('div',{cls:'ep-activity',style:{background:'var(--bg2)',borderLeft:`3px solid ${stForDay.color}`}});
+          ae.innerHTML=`<div class="ep-act-icon">${CATS[act.category]?.emoji||'⭐'}</div>
+            <div class="ep-act-name" style="font-weight:700;color:${stForDay.color}">${act.title}</div>
+            <div class="ep-act-dur">${act.duration||''}</div>`;
+          slotEl.appendChild(ae);
+        });
+      }
+    }
+
+    const addBtn=el('button',{cls:'ep-add-btn',onClick:()=>showToast('Aktivität hinzufügen – kommt bald!')});
+    addBtn.innerHTML=`<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg> Hinzufügen`;
+    slotEl.appendChild(addBtn);
+    wrap.appendChild(slotEl);
+  });
+
+  // Padding at bottom
+  const pad=el('div',{style:{height:'24px'}});
+  wrap.appendChild(pad);
+  return wrap;
+}
+
+// ── PUSH NOTIFICATIONS ────────────────────────────────────
+function renderNotifications(){
+  const wrap=el('div',{cls:'fade-up'});
+  const tb=el('div',{cls:'topbar'});
+  const topRow=el('div',{style:{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:'6px'}});
+  const burger=el('button',{style:{background:'var(--bg2)',border:'none',borderRadius:'12px',padding:'9px 11px',display:'flex',flexDirection:'column',gap:'4px'},onClick:openMenu});
+  for(let i=0;i<3;i++) burger.appendChild(el('div',{style:{width:'18px',height:'2px',background:'var(--text2)',borderRadius:'2px'}}));
+  topRow.appendChild(burger);
+  tb.appendChild(topRow);
+  tb.innerHTML+=`<div style="font-family:'Fraunces',serif;font-size:26px;font-weight:700">🔔 Erinnerungen</div><div style="font-size:13px;color:var(--text3);margin-top:2px">Kein Check-in mehr verpassen</div>`;
+  wrap.appendChild(tb);
+
+  // Hero
+  const hero=el('div',{cls:'push-hero'});
+  const granted='Notification' in window && Notification.permission==='granted';
+  hero.innerHTML=`<div class="push-hero-icon">🔔</div>
+    <div class="push-hero-title">Immer informiert bleiben</div>
+    <div class="push-hero-sub">Check-ins, Caras Schlafzeiten und Tageserinnerungen direkt aufs iPhone.</div>
+    <button class="push-enable-btn" id="push-btn" onclick="requestPushPermission()" ${granted?'disabled':''}>
+      ${granted?'✓ Push aktiviert':'Push-Benachrichtigungen aktivieren'}
+    </button>`;
+  wrap.appendChild(hero);
+
+  const slbl=el('div',{cls:'sec-lbl',style:{padding:'4px 16px 0'}}, 'Was wann erinnert');
+  wrap.appendChild(slbl);
+
+  NOTIFS.forEach((n,i)=>{
+    const item=el('div',{cls:'notif-item'});
+    item.innerHTML=`<div class="notif-ico">${n.icon}</div>
+      <div class="notif-body">
+        <div class="notif-title">${n.title}</div>
+        <div class="notif-desc">${n.desc}</div>
+      </div>
+      <div class="notif-toggle ${n.on?'on':''}" onclick="toggleNotif(${i},this)"></div>`;
+    wrap.appendChild(item);
+  });
+
+  const pad=el('div',{style:{height:'24px'}}); wrap.appendChild(pad);
+  return wrap;
+}
+window.requestPushPermission=function(){
+  if(!('Notification' in window)){showToast('Bitte als PWA installieren für Push');return;}
+  Notification.requestPermission().then(p=>{
+    const btn=document.getElementById('push-btn');
+    if(p==='granted'){
+      btn.textContent='✓ Push aktiviert'; btn.disabled=true;
+      showToast('🔔 Push aktiviert!');
+      new Notification('Reiseplan 2026 🌍',{body:`In ${getDaysUntilTrip()} Tagen geht's los! Bon voyage! ✈️`,icon:'/icon-192.png'});
+    } else {
+      showToast('Push abgelehnt – in iPhone-Einstellungen ändern');
+    }
+  });
+};
+window.toggleNotif=function(i,el2){
+  NOTIFS[i].on=!NOTIFS[i].on;
+  el2.classList.toggle('on',NOTIFS[i].on);
+  saveNotifs();
+  showToast(NOTIFS[i].on?`🔔 "${NOTIFS[i].title}" an`:`🔕 "${NOTIFS[i].title}" aus`);
+};
 
 // ── Boot ──────────────────────────────────────────────────
 startSync();
